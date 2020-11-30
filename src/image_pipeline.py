@@ -201,7 +201,7 @@ class ImagePipeline(object):
                 if (i == 0 and j == 0 ):
                     print ('first image shape {}'.format(self.img_lst2[i][j].shape))
 
-
+    '''
     def save(self, keyword):
         """
         Save the current images into new sub directories
@@ -235,7 +235,7 @@ class ImagePipeline(object):
 
         io.imshow(self.img_lst2[0][img_ind])  # prolly change sub_dir to sub_dir_ind (0-81)
         plt.show()
-
+    '''
     def get_image(self, sub_dir_ind, img_ind):
         """
         View the nth image in the nth class
@@ -251,6 +251,7 @@ class ImagePipeline(object):
         plt.show()    
         return self.img_lst2[sub_dir_ind][img_ind]
 
+    '''
     def savefig(self, sub_dir, img_ind, file_attrib):
         """
         Save the nth image in the nth class
@@ -265,19 +266,61 @@ class ImagePipeline(object):
         filename = sub_dir + str(img_ind) + '_' + file_attrib + '.png'
         print(filename)
         plt.savefig(filename)    
-    
+    '''
 
-    def transform(self, func, params, sub_dir=None, img_ind=None):
+    def transform_dict (self, func, params, img_dict):
+        '''
+        Args: img_dict is a dictionary of filename and images
+        Returns: img_dict after the function is applied
+        This function gets the parameters needed to call transform for
+        each image, builds a new image dictionary, shows and saves it,
+        and returns it.  
+        No permanent object updates are made.
+        Output of this can be fed as input, to set up a series of transformations
+        on our sample biopsies
+        '''
+        rtn_dict = {}
+        # get sub_dir and img_ind for each dictionary item
+        for k, v in img_dict.items():
+            outer_i, inner_i = self.get_img_lst2_indices(k)
+
+            changed_img = self.get_transform_copy(func, params, sub_dir_ind=outer_i, img_ind=inner_i )
+            rtn_dict[k] = changed_img
+
+        return rtn_dict
+
+    def get_transform_copy(self, func, params, sub_dir_ind=None, img_ind=None):
+        """
+        Takes a function and apply to every img_arr in self.img_arr returning a copy 
+        instead of updating the source images
+        Have to option to transform one as  a test case
+
+        :param sub_dir_ind: The index for the image in img_lst2
+        :param img_ind: The index of the category of images
+
+        returns transformed image(s) instead of updating self
+        """
+        # Apply to one test case
+        if sub_dir_ind is not None and img_ind is not None:
+            img_arr = self.img_lst2[sub_dir_ind][img_ind]
+            img_arr = func(img_arr, **params).astype(float)
+            return(img_arr)
+        else:  # This is a lot, use sparingly
+            new_img_lst2 = []
+            for img_lst in self.img_lst2:
+                new_img_lst2.append([func(img_arr, **params).astype(float) for img_arr in img_lst])
+            return(new_img_lst2)
+
+    def transform(self, func, params, sub_dir_ind=None, img_ind=None):
         """
         Takes a function and apply to every img_arr in self.img_arr.
         Have to option to transform one as  a test case
 
-        :param sub_dir: The index for the image
+        :param sub_dir_ind: The index for the image in img_lst2
         :param img_ind: The index of the category of images
         """
         # Apply to one test case
-        if sub_dir is not None and img_ind is not None:
-            sub_dir_ind = self.label_map[sub_dir]
+        if sub_dir_ind is not None and img_ind is not None:
             img_arr = self.img_lst2[sub_dir_ind][img_ind]
             img_arr = func(img_arr, **params).astype(float)
             io.imshow(img_arr)
@@ -289,25 +332,34 @@ class ImagePipeline(object):
                 new_img_lst2.append([func(img_arr, **params).astype(float) for img_arr in img_lst])
             self.img_lst2 = new_img_lst2
 
-    def grayscale(self, sub_dir=None, img_ind=None):
+    def grayscale(self, sub_dir_ind=None, img_ind=None):
         """
         Grayscale all the images in self.img_lst2
 
         :param sub_dir: The sub dir (if you want to test the transformation on 1 image)
         :param img_ind: The index of the image within the chosen sub dir
         """
-        self.transform(color.rgb2gray, {}, sub_dir=sub_dir, img_ind=img_ind)
+        self.transform(color.rgb2gray, {}, sub_dir_ind=sub_dir_ind, img_ind=img_ind)
 
-    def canny(self, sub_dir=None, img_ind=None):
+    def canny(self, sub_dir_ind=None, img_ind=None):
         """
         Apply the canny edge detection algorithm to all the images in self.img_lst2
 
         :param sub_dir: The sub dir (if you want to test the transformation on 1 image)
         :param img_ind: The index of the image within the chosen sub dir
         """
-        self.transform(feature.canny, {}, sub_dir=sub_dir, img_ind=img_ind)
+        self.transform(feature.canny, {}, sub_dir_ind=sub_dir_ind, img_ind=img_ind)
 
-    def tv_denoise(self, weight=2, multichannel=True, sub_dir=None, img_ind=None):
+    def dye_separation(self, sub_dir_ind=None, img_ind=None):
+        """
+        Apply the canny edge detection algorithm to all the images in self.img_lst2
+
+        :param sub_dir: The sub dir (if you want to test the transformation on 1 image)
+        :param img_ind: The index of the image within the chosen sub dir
+        """
+        self.transform(dye_separation, {}, sub_dir_ind=sub_dir_ind, img_ind=img_ind)
+
+    def tv_denoise(self, weight=2, multichannel=True, sub_dir_ind=None, img_ind=None):
         """
         Apply to total variation denoise to all the images in self.img_lst2
 
@@ -316,7 +368,7 @@ class ImagePipeline(object):
         """
         self.transform(restoration.denoise_tv_chambolle,
                        dict(weight=weight, multichannel=multichannel),
-                       sub_dir=sub_dir, img_ind=img_ind)
+                       sub_dir_ind=sub_dir_ind, img_ind=img_ind)
 
     def resize(self, shape, save=False):
         """
@@ -326,9 +378,10 @@ class ImagePipeline(object):
         :param save: Boolean to save the images in new directories or not
         """
         self.transform(transform.resize, dict(output_shape=shape))
-        if save:
-            shape_str = '_'.join(map(str, shape))
-            self.save(shape_str)
+        
+        #if save:
+        #    shape_str = '_'.join(map(str, shape))
+        #    self.save(shape_str)
 
     def _vectorize_features(self):
         """
@@ -379,7 +432,7 @@ class ImagePipeline(object):
         year = filename.split('-')[-4] # 14
         proc = filename.split('_')[0]  # SOB
         m_b = filename.split('_')[1].split('-')[0]  # B
-        type1 = filename.split('-')[-5].split('-')[-1]
+        type1 = filename.split('-')[-5].split('_')[-1]
 
         d1[filename] = {'tumor_class': m_b, \
             'biopsy_procedure': proc, \
@@ -458,6 +511,23 @@ class ImagePipeline(object):
         self._vectorize_attribs()
         print ('attribs (dict) len {}'.format( len(self.img_attribs)))
 
+    def get_img_lst2_indices(self, filename):
+        '''
+        Gets the sub_dir_ind (first level index) and 2nd level index to use
+        as an address for the images in self.img_lst2
+        (as well as self.img_names2 and self.img_attribs)
+        Used before calling transform()
+        returns tuple of outer_i and inner_i
+
+        '''
+        outer_i = next(j for j, lst in enumerate(self.img_names2) if filename in lst)
+        print ('outer_i {} {}'.format(type(outer_i), outer_i))
+        if outer_i == None:
+            print ('**** There is a bug *****')
+        inner_i = self.img_names2[outer_i].index(filename)    
+        print ('found fn {} at nested index [{}] [{}]'.format(filename, outer_i, inner_i))
+
+        return outer_i, inner_i
         
     def get_one_of_each(self):
         '''
@@ -469,8 +539,10 @@ class ImagePipeline(object):
         img_dict = {}
         # look through img_attribs for first instance of each tumor type
         for i, ttype in enumerate (self.tumor_types):
+            print ('getting sample of type {}'.format(ttype))
             # list of a generator expression (which does same thing as a list comprehension, fancy!)
-            found_keys = list(k for k, v in self.img_attribs.items() if ttype in v['tumor_type'])
+            found_keys = list(k for k, v in self.img_attribs.items() if ttype == v['tumor_type'])
+            #print ('found_keys {}'.format(found_keys))
             fn = found_keys[0]
             # get first one's filename to test
             #fn = 'SOB_M_PC-14-9146-40-001.png'
@@ -479,13 +551,15 @@ class ImagePipeline(object):
             #j = self.img_names[fn].index
             #found_keys2 = list(j for j, lst in enumerate(self.img_names2) if fn in lst)
 
+            outer_i, inner_i = self.get_img_lst2_indices(fn)
+            '''
             outer_i = next(j for j, lst in enumerate(self.img_names2) if fn in lst)
             print ('outer_i {} {}'.format(type(outer_i), outer_i))
             if outer_i == None:
                 print ('**** There is a bug *****')
             inner_i = self.img_names2[outer_i].index(fn)    
             print ('found fn {} at nested index [{}] [{}]'.format(fn, outer_i, inner_i))
-
+            '''
             img = self.get_image(outer_i, inner_i)
 
             img8_lst.append(img)
@@ -494,8 +568,8 @@ class ImagePipeline(object):
         print('returning {} sample images in list shape {}'.format(len(img8_lst), img8_lst[0].shape))
 
         # more clever?    
-        img_dict2 =  dict(zip(self.tumor_types, img8_lst))
-        print('is same? {}'.format(img_dict2))    
+        # img_dict2 =  dict(zip(self.tumor_types, img8_lst))
+        # print('is same? {}'.format(img_dict2))    
         return img_dict
 
 if __name__ == '__main__':

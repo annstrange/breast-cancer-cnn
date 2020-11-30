@@ -44,7 +44,7 @@ from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.optimizers import SGD
 #from tensorflow.keras.datasets import mnist
 from tensorflow.keras.utils import to_categorical
-from image_pipeline import ImagePipeline
+
 #from pipeline import 
 from skimage.filters import sobel 
 from skimage.feature._canny import canny
@@ -57,6 +57,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy as np
 from sklearn.model_selection import GridSearchCV
+
+from image_pipeline import ImagePipeline
+from image_convolv import * 
+from cnn import *
 
 def read_images(root_dir): 
 	'''
@@ -97,26 +101,6 @@ def test_sizes(ip, init=False):
 	but I'd like to try it. 
 	'''
 
-def plot_images(imgs, save_title='imgs.png', show = False):
-	'''
-	Input: Dictionary of images, plotting options. 
-	Output: Plot of 2-4 images.  
-	'''
-	if len(imgs) == 2:
-		fig, axs = plt.subplots(1,2, figsize=(8, 8))
-	elif len(imgs) == 4:
-		fig, axs = plt.subplots(2,2, figsize=(8, 8))
-	elif len(imgs) == 8:
-		fig, axs = plt.subplots(4,2, figsize=(8, 8))
-	else:
-		raise ValueError("Plot function requires 2 or 4 items.")
-	for ax, k, v in zip(axs.flatten(), imgs.keys(), imgs.values()): 
-		ax.imshow(v, cmap='gray')
-		ax.set_xticks([]); ax.set_yticks([])
-		ax.set_title('Image ' + k)
-	fig.savefig(save_title)
-	if show: 
-		plt.show()	
 
 def test_transforms(ip): 
 	'''
@@ -128,14 +112,14 @@ def test_transforms(ip):
 	'''
 
     # instead of rgb2gray, find major colors
-	transformations = [rgb2gray, sobel, canny, denoise_tv_chambolle, denoise_bilateral]
-	transform_labels = ['rgb2gray', 'sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral']
+	transformations = [sobel, canny, denoise_tv_chambolle, denoise_bilateral]
+	transform_labels = ['sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral']
 	ip.resize((200, 300, 3))
 	for i, transformation in enumerate (transformations): 
 		ip.transform(transformation, {})
-		ip.savefig('samples/40X', 1, transform_labels[i])
-		ip.savefig('samples/40X', 2, transform_labels[i])
-		ip.savefig('samples/40X', 3, transform_labels[i])
+		#ip.savefig('samples/', 1, transform_labels[i])
+		#ip.savefig('samples/', 2, transform_labels[i])
+		#ip.savefig('samples/', 3, transform_labels[i])
 
 
 	'''
@@ -152,11 +136,19 @@ def fit_rand_forest(image_size, transformation=None):
 	the classes of images (dogs and cats). 
 	''' 
 
-	print ('**** in fit_best_model ***** ')
+	print ('**** in fit_rand_forest ***** ')
 
-	rf = RandomForestClassifier(random_state=1)
+	# pass these in from getting the best params
+	rf = RandomForestClassifier(bootstrap=True, ccp_alpha=0.0, class_weight=None,
+                       criterion='gini', max_depth=12, max_features='auto',
+                       max_leaf_nodes=None, max_samples=None,
+                       min_impurity_decrease=0.0, min_impurity_split=None,
+                       min_samples_leaf=1, min_samples_split=2,
+                       min_weight_fraction_leaf=0.0, n_estimators=100,
+                       n_jobs=None, oob_score=False, random_state=1,
+                       verbose=0, warm_start=False)
 	root_dir = '../data/BreaKHis_v1/histology_slides/breast'
-	image_size = (200, 300, 3)
+ 
 	ip = read_images(root_dir)
 	ip.resize(shape = image_size)
 
@@ -165,6 +157,8 @@ def fit_rand_forest(image_size, transformation=None):
 	elif transformation == sobel: 
 		ip.grayscale()
 		ip.transform(sobel, {})
+	elif transformation == dye_color_separation:
+		ip.transform(dye_color_separation, {})
 	
 	ip.vectorize()
 	ip.vectorize_y()
@@ -175,7 +169,6 @@ def fit_rand_forest(image_size, transformation=None):
 	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
     #print('target labels shape: {} and ex {}'.format(target.shape, target[:2]))
 
-	return
 
 	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
 
@@ -202,14 +195,16 @@ def fit_best_model(parameters):
 	image_size = (200, 300, 3)
 	ip = read_images(root_dir)
 	ip.resize(shape = image_size)
+	ip.transform(dye_color_separation, {})
 
 	ip.vectorize()
+	ip.vectorize_y()
 	features = ip.features
 	# what does this look like?
 	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
 
-	target = ip.labels
-	print('target labels shape: {} and ex {}'.format(target.shape, target[:2, :2]))
+	target = ip.tumor_class_vector
+	print('target tumor class vector shape: {} and ex {}'.format(target.shape, target[:5]))
 
 
 	rf = RandomForestClassifier()
@@ -267,13 +262,56 @@ if __name__ == '__main__':
 	img_dict = ip.get_one_of_each()
 
 	plot_images(img_dict)
+	
+	# ok with color? if b&w
+	#gray_imgs = get_grayscale(img_dict)
+	#sobel_imgs = apply_filter(gray_imgs, img_filter = sobel, save_title='sobel_imgs.png', show_bool = False)
+	#canny_imgs = apply_filter(gray_imgs, img_filter = canny, save_title='canny_imgs.png', show_bool = False)
+
 
 	# Image convolving
-	#params = {'n_estimators': [10, 100, 1000], 'max_depth': [8, 12, None]}
-	#best_rf, best_params, best_score = fit_best_model(params)
+	# do we want to exclude white areas completely?
 
-	#print("\nBest parameters from the grid search:")
-	#print(best_params)
-	#print("\nCross validated score of best estimator:")
-	#print(best_score)
+	# find clusters of similar colors
+	centroids = apply_KMeans(img_dict)
+	# or ID the dye colors (s/be pretty similar results; we'll compare)
+	dye_colors = dye_color_separation_dict(img_dict)
 
+
+	# Apply actual transformations to the feature set
+	ip.transform(dye_color_separation, {})
+
+	features = ip.features
+	target = ip.tumor_class_vector
+	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
+
+	
+	# Run through model
+	params = {'n_estimators': [10, 100, 1000], 'max_depth': [8, 12, None]}
+	best_rf, best_params, best_score = fit_best_model(params)
+
+	print("\nBest estimator from the GridSearchCV:")
+	print(best_rf)
+	print("\nBest parameters from the grid search:")
+	print(best_params)
+	print("\nCross validated score of best estimator:")
+	print(best_score)
+
+	accuracy = fit_rand_forest ((200,300), transformation=dye_color_separation)
+	print ('accuracy of Rand Forest w dye color sep {}'.format(accuracy))  # 47%
+
+	cnn = CNN()
+	# Have to get X data from bc.py, pass as numpy arrays
+	cnn.fit(X_train, X_test, y_train, y_test)
+	cnn.load_and_featurize_data()
+
+	cnn.define_model(nb_filters, kernel_size, input_shape, pool_size)
+
+	# during fit process watch train and test error simultaneously
+	cnn.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
+				verbose=1, validation_data=(X_test, y_test))
+
+	score = cnn.model.evaluate(X_test, y_test, verbose=0)
+
+	print('Test score:', score[0])
+	print('Test accuracy:', score[1])  # this is the one we care about
