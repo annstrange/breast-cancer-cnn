@@ -62,6 +62,7 @@ from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
 
+
 def read_images(root_dir): 
 	'''
 	Input: None
@@ -71,7 +72,7 @@ def read_images(root_dir):
 	to attach them to our ImagePipeline object. 
 	'''
 	ip = ImagePipeline(root_dir)
-	ip.read((['40X']), brief_mode=True)  # only pick one mag at a time
+	ip.read((['200X']), brief_mode=False)  # only pick one mag at a time, us brief_mode for debugging
 	return ip
 
 def test_sizes(ip, init=False):
@@ -114,7 +115,7 @@ def test_transforms(ip):
     # instead of rgb2gray, find major colors
 	transformations = [sobel, canny, denoise_tv_chambolle, denoise_bilateral]
 	transform_labels = ['sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral']
-	ip.resize((200, 300, 3))
+	ip.resize((227, 227, 3))
 	for i, transformation in enumerate (transformations): 
 		ip.transform(transformation, {})
 		#ip.savefig('samples/', 1, transform_labels[i])
@@ -166,14 +167,15 @@ def fit_rand_forest(image_size, transformation=None):
 
     # get vector of M/B for 
 	target = ip.tumor_class_vector
-	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
+	#print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
     #print('target labels shape: {} and ex {}'.format(target.shape, target[:2]))
 
-
+	print('shapes of train test input {} {}'.format(features.shape, target.shape))
 	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
+	#print('shapes of X_train, X_test, y_train, y_test {} {} {} {}'.format(X_train, X_test, y_train, y_test))
 
 	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
-	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
+	#print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
 
 
 	rf.fit(X_train, y_train)
@@ -192,16 +194,16 @@ def fit_best_model(parameters):
 
 	print ('**** in fit_best_model ***** ')
 	root_dir = '../data/BreaKHis_v1/histology_slides/breast'
-	image_size = (200, 300, 3)
+	image_size = (227, 227, 3)
 	ip = read_images(root_dir)
-	ip.resize(shape = image_size)
-	ip.transform(dye_color_separation, {})
+	#ip.resize(shape = image_size)
+	#ip.transform(dye_color_separation, {})
 
 	ip.vectorize()
 	ip.vectorize_y()
 	features = ip.features
 	# what does this look like?
-	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
+	#print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
 
 	target = ip.tumor_class_vector
 	print('target tumor class vector shape: {} and ex {}'.format(target.shape, target[:5]))
@@ -238,8 +240,8 @@ def img_transform(img):
 
 	Transform an image by reshaping it and also applying a grayscale to it. 
 	'''
-	img = resize(img, (200, 300, 3))
-	#img = rgb2gray(img)
+	img = resize(img, (227, 227, 3))
+	img = rgb2gray(img)
 	img = np.ravel(img)
 
 	return img
@@ -251,7 +253,7 @@ if __name__ == '__main__':
 
 	# Todo: play around with this after we have a cost function
 	# starting size is 460 x 700 but sometimes 456 x 700
-	image_size = (200, 300, 3)
+	image_size = (227, 227, 3)
 
 	ip = read_images(root_dir)
 	ip.resize(shape = image_size)
@@ -259,9 +261,10 @@ if __name__ == '__main__':
 	# Turns data into arrays
 	ip.vectorize()
 	ip.vectorize_y() 
-	img_dict = ip.get_one_of_each()
 
-	plot_images(img_dict)
+	# Useful
+	#img_dict = ip.get_one_of_each()
+	#plot_images(img_dict)
 	
 	# ok with color? if b&w
 	#gray_imgs = get_grayscale(img_dict)
@@ -273,20 +276,36 @@ if __name__ == '__main__':
 	# do we want to exclude white areas completely?
 
 	# find clusters of similar colors
-	centroids = apply_KMeans(img_dict)
+	#centroids = apply_KMeans(img_dict)
 	# or ID the dye colors (s/be pretty similar results; we'll compare)
-	dye_colors = dye_color_separation_dict(img_dict)
+	#dye_colors = dye_color_separation_dict(img_dict)
 
 
 	# Apply actual transformations to the feature set
-	ip.transform(dye_color_separation, {})
+	#ip.transform(dye_color_separation, {})
 
 	features = ip.features
 	target = ip.tumor_class_vector
-	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
 
 	
+	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
+    #print('target labels shape: {} and ex {}'.format(target.shape, target[:2]))
+
+	print('shapes of train test input {} {}'.format(features.shape, target.shape))
+	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
+	#print('shapes of X_train, X_test, y_train, y_test {} {} {} {}'.format(X_train, X_test, y_train, y_test))
+
+	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
+	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
+
+
+	# Option B - Don't flatten so much, go w 4D numpy array all the way through
+	# Make sure train_test_split is ok
+	# Vectorize B
+
+
 	# Run through model
+	'''
 	params = {'n_estimators': [10, 100, 1000], 'max_depth': [8, 12, None]}
 	best_rf, best_params, best_score = fit_best_model(params)
 
@@ -296,22 +315,28 @@ if __name__ == '__main__':
 	print(best_params)
 	print("\nCross validated score of best estimator:")
 	print(best_score)
+	'''
 
-	accuracy = fit_rand_forest ((200,300), transformation=dye_color_separation)
-	print ('accuracy of Rand Forest w dye color sep {}'.format(accuracy))  # 47%
+	#accuracy = fit_rand_forest (image_size)
+	#print ('accuracy of Rand Forest w no transforms {}'.format(accuracy))  
 
 	cnn = CNN()
 	# Have to get X data from bc.py, pass as numpy arrays
+	# Need y data one hot encoded
+	y_train = cnn.one_hot_encode(y_train)
+	y_test = cnn.one_hot_encode(y_test)
+
 	cnn.fit(X_train, X_test, y_train, y_test)
 	cnn.load_and_featurize_data()
 
-	cnn.define_model(nb_filters, kernel_size, input_shape, pool_size)
+	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
 
 	# during fit process watch train and test error simultaneously
+	
 	cnn.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
 				verbose=1, validation_data=(X_test, y_test))
 
 	score = cnn.model.evaluate(X_test, y_test, verbose=0)
 
-	print('Test score:', score[0])
+	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
