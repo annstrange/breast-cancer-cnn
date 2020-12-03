@@ -54,14 +54,17 @@ from skimage.transform import resize
 from skimage.io import imread
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 import numpy as np
 from sklearn.model_selection import GridSearchCV
+
 
 from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
 
+# Careful: outside numpy we would say this is a LxW shape
+image_size = tuple((153, 234, 3))
 
 def read_images(root_dir): 
 	'''
@@ -115,7 +118,7 @@ def test_transforms(ip):
     # instead of rgb2gray, find major colors
 	transformations = [sobel, canny, denoise_tv_chambolle, denoise_bilateral]
 	transform_labels = ['sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral']
-	ip.resize((227, 227, 3))
+	ip.resize(image_size)
 	for i, transformation in enumerate (transformations): 
 		ip.transform(transformation, {})
 		#ip.savefig('samples/', 1, transform_labels[i])
@@ -127,15 +130,16 @@ def test_transforms(ip):
     Summary of transformations 
 	'''
 
+'''
 def fit_rand_forest(image_size, transformation=None):
-	'''
+	
 	Input: ImagePipeline Object, Tuple, List
 	Output: List of floats. 
 
 	Fit a random forest using the images in an ImagePipeline Object and a number of different
 	transformations (holding the image size fixed), and output the accuracy score for identifying 
 	the classes of images (dogs and cats). 
-	''' 
+	 
 
 	print ('**** in fit_rand_forest ***** ')
 
@@ -158,6 +162,8 @@ def fit_rand_forest(image_size, transformation=None):
 	elif transformation == sobel: 
 		ip.grayscale()
 		ip.transform(sobel, {})
+	elif transformation == denoise_bilateral:
+		ip.tv_denoise()
 	elif transformation == dye_color_separation:
 		ip.transform(dye_color_separation, {})
 	
@@ -183,18 +189,17 @@ def fit_rand_forest(image_size, transformation=None):
 	rf_accuracy = accuracy_score(y_test, rf_preds)
 
 	return rf_accuracy
-
+'''
+'''
 def fit_best_model(parameters): 
-	'''
-	Input: None
-	Output: Fitted Random Forest Model
+	#Input: None
+	#Output: Fitted Random Forest Model
 
-	Return the best fitted Random Forest Model that we have used from above. 
-	'''
+	#Return the best fitted Random Forest Model that we have used from above. 
 
 	print ('**** in fit_best_model ***** ')
 	root_dir = '../data/BreaKHis_v1/histology_slides/breast'
-	image_size = (227, 227, 3)
+	#image_size = (227, 227, 3)
 	ip = read_images(root_dir)
 	#ip.resize(shape = image_size)
 	#ip.transform(dye_color_separation, {})
@@ -214,7 +219,7 @@ def fit_best_model(parameters):
 	                   verbose=True)
 	clf.fit(features, target)
 	return clf.best_estimator_, clf.best_params_, clf.best_score_	
-
+'''
 def predict_img(model, filepath): 
 	'''
 	Input: Fitted model, Numpy Array
@@ -240,12 +245,25 @@ def img_transform(img):
 
 	Transform an image by reshaping it and also applying a grayscale to it. 
 	'''
-	img = resize(img, (227, 227, 3))
+	img = resize(img, image_size)
 	img = rgb2gray(img)
 	img = np.ravel(img)
 
 	return img
 
+def apply_premodel_transforms(transformation):
+    # Apply image transformations to the numpy array of data, pre X/y train/test split, and pre-vectorize	
+
+	if transformation == rgb2gray: 
+		ip.grayscale()
+	elif transformation == sobel: 
+		ip.grayscale()
+		ip.transform(sobel, {})
+	elif transformation == denoise_bilateral:
+		ip.tv_denoise()
+	elif transformation == dye_color_separation:
+		ip.transform(dye_color_separation, {})
+	
 
 if __name__ == '__main__':
 	root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
@@ -253,14 +271,16 @@ if __name__ == '__main__':
 
 	# Todo: play around with this after we have a cost function
 	# starting size is 460 x 700 but sometimes 456 x 700
-	image_size = (227, 227, 3)
 
 	ip = read_images(root_dir)
 	ip.resize(shape = image_size)
 
+	apply_premodel_transforms('rgb2gray')
+	#apply_premodel_transforms('denoise_bilateral')
+
 	# Turns data into arrays
 	ip.vectorize()
-	ip.vectorize_y() 
+	#ip.vectorize_y() 
 
 	# Useful
 	#img_dict = ip.get_one_of_each()
@@ -288,15 +308,15 @@ if __name__ == '__main__':
 	target = ip.tumor_class_vector
 
 	
-	print('features shape: {} and ex {}'.format(features.shape, features[:2, :2]))
+	print('features shape: {} '.format(features.shape))
     #print('target labels shape: {} and ex {}'.format(target.shape, target[:2]))
 
 	print('shapes of train test input {} {}'.format(features.shape, target.shape))
 	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
 	#print('shapes of X_train, X_test, y_train, y_test {} {} {} {}'.format(X_train, X_test, y_train, y_test))
 
-	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
-	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
+
+	#print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
 
 
 	# Option B - Don't flatten so much, go w 4D numpy array all the way through
@@ -322,10 +342,12 @@ if __name__ == '__main__':
 
 	cnn = CNN()
 	# Have to get X data from bc.py, pass as numpy arrays
-	# Need y data one hot encoded
-	y_train = cnn.one_hot_encode(y_train)
-	y_test = cnn.one_hot_encode(y_test)
 
+	# Need y data one hot encoded, do we?  let's hit pause for now
+	#y_train = cnn.one_hot_encode(y_train)
+	#y_test = cnn.one_hot_encode(y_test)
+
+	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
 	cnn.fit(X_train, X_test, y_train, y_test)
 	cnn.load_and_featurize_data()
 
@@ -333,10 +355,30 @@ if __name__ == '__main__':
 
 	# during fit process watch train and test error simultaneously
 	
-	cnn.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
-				verbose=1, validation_data=(X_test, y_test))
+	cnn.fit_model( batch_size=batch_size, epochs=nb_epoch,
+				verbose=1, data_augmentation=True)
+	#cnn.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
+	#			verbose=1, validation_data=(X_test, y_test))
 
 	score = cnn.model.evaluate(X_test, y_test, verbose=0)
+
+
+
+	# predictions = model.predict(X_test)  # one-hot encoded
+	# predictions = model.predict_classes(X_test).reshape((-1, 1))  # deprecated
+
+	y_pred = cnn.model.predict(X_test)
+	print('predict results \n{}'.format(y_pred[:20]))
+
+	#rint('actual v predict\n{}'.format())
+
+	#Taking argmax will tell the winner of each by highest probability. 
+	predictions = np.argmax(cnn.model.predict(X_test), axis=-1).reshape((-1, 1))  # just right
+	# same as?
+	y_pred_1D = np.argmax(y_pred, axis=-1).reshape(-1, 1)
+
+	#predictions = cnn.predict()
+	print (classification_report(y_test, y_pred_1D)) 
 
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about

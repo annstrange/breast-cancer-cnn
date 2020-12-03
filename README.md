@@ -2,24 +2,49 @@
 Breast Cancer biopsy image analysis using CNN
 
 # Objective
-The goal of this project is to train and tune an artificial network to accurately classify breast cancer biopsies as malignant or benign. 
+Breast cancer tumor biopsy classification of benign or malignant remains a very manual and subjective process, done by specially trained pathologists.  Breast Cancer is the 2nd leading cause of cancer deaths.  Advancing the fight against cancer requires early detection which could be aided by an efficient detection system. 
+
+The goal of this project is to train and tune a convoluted artificial network (CNN) to accurately classify breast cancer biopsies as malignant or benign.  Some recent studies (https://arxiv.org/abs/1811.12231) suggest CNNs may be biased do better than textures than shapes, implying Deep neural networks are particularly suited to pattern recognition, perhaps gaining better results without first identifying the same features a human would look for.  Seeking to identify the same features such as pathologists look for is beyond the scope of this project.
+
+# Background and Related Work
+Prior work has either sought to pursue feature identification which can then be used to classify using supervised learning techniques.  For example [this paper] acheived an 85% accuracy rate using the PFTAS  .... with a modified version of the presesigned AlexNet network.....   vs the more recent work [this paper] which used an Unsepervised approach to achieve superior results (over 98% accuracy) without need for particular domain knowledge.  
+link https://reader.elsevier.com/reader/sd/pii/S2352914819301133?token=053D59F39621088D53B0111C3ED1A28FC32C2D6A08E016BD3DB7C4316F6F06BA75FB0703280AA217C9DB7951EE60C61D
+
+
+Prior Studies Table
+Existing methods and respective Accuracy.  
+------
+Year    Method Used         Validation Accuracy Range (in %)    Error Rate 
+2017    K-Nearest Neighbor [32] 83 to 86 19.28 
+2017    Pre-Trained Networks [11] 80 to 89 4.74 
+2017    Feature Extracted Using CNN [33] 83 to 90 4.28 
+2018    Deep Convolution Neural Network
+2019    Cancer Diagnosis in histopathological image: CNN based approach [] 88 to 96 
 
 # Data Source
+I have utilized the BreakHis database, which has been accumulated from the result of a survey by P&D Lab, Brazil in 2014. Breast tissues are taken as samples by the procedure of surgical (open) biopsy (SOB). Samples are stained by hematoxylin and eosin (HE) and produced by a standard paraffin process in which specimen infiltration and embedment are done in paraffin. These histopathology images have a RGB (three channel) TrueColor (8 bits- Red, 8 bits- Green, 8 bits- Blue) color coding scheme. This database contains a total of 7909 images of 700x460 pixel resolution. Images are captured in four different magnification levels, 40X, 100X, 200X, and 400X.  As prior studies have acheived about 5% higher prediction results with the higher magnifications, highest with 200x, I'll focus on that particular dataset.    
+
+1(chart of data)
+
+The data is classified as Benign or Malignant, and represents 4 different types of tumor in each classification.  
+
+!(sample of each)
+
 
 
 
 
 # EDA and how to run
-To run this yourself, 
-1. Fork/clone this github
-2. download and unzip the data source so the folder structure looks like this
-!(image of folder structure)[]
+The dataset can be obtained here (link)
+Needed: Tensorflow with Keras ver 2.3
 
-3. from /src run python bc.py
-Options: To change hyperparameters, edit the global variables in bc.py
 
 # Convolving
 Using Scikit skimage which is good for feature detection, filtering, contour models, morphology, and classification problems.
+
+Analyzed the following types of image pre-processing
+
+!(images here of convolved sample)
 
 Starting set of slides (one for each type of tumor)
 !(Initial images)
@@ -34,7 +59,8 @@ Immunohistochemical staining colors separation:
 - After identifying the outline
 <images here>
 
-
+# Feature Identification
+A study has shown that the human brain is sensitive to shapes, while computers are more sensitive to patterns and texture, [28]. Because of this fact, feature learning is entirely different for manual versus machine. In the visual context, malignant tumors tend to have large and irregular nuclei or multiple nuclear structures. The cytoplasm also undergoes changes, wherein new structures appear, or normal structures disappear. Malignant cells have a small cytoplasmic amount, frequently with vacuoles. In this scenario, the ratio of cytoplasm to nucleus decreases [29]. All of these features are examined by experts, or algorithms are developed to quantify these features to automate detection. This approach is difficult and imprecise as selection and quantification involve various unknown errors that are hard to address. In the case of supervise learning, we do not need to provide these features explicitly. In this case images are fed to an architecture such as CNN, along with its class as a label (Benign or Malignant). From the automatic update of filter values in the training process, CNN is able to extract the computational features. In short, for a given architecture of CNN filters and their weights, are features that are used at the time of testing for model evaluation
 
 
 
@@ -43,6 +69,7 @@ Immunohistochemical staining colors separation:
 
 # Model Selection
 
+!(picture of C1 S1 maps) CNN architecture
 
 # Choice of Hypterparameters
 
@@ -63,7 +90,9 @@ Immunohistochemical staining colors separation:
 
 Table of Cost Measures with different parameters:
 
+Cited
 
-
+Cancer Diagnosis in histopathological image: CNN based approach (Dabeer, S., Khan, M.M., Islam, S.) 2019
+ https://doi.org/10.1016/j.imu.2019.100231.
 
 

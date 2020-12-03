@@ -28,14 +28,14 @@ class ImagePipeline(object):
         self.label_map = None
 
         # Image variables that are filled in when read() and vectorize()
-        self.img_lst2 = []
-        self.img_names2 = []
+        self.images_list = []
+        self.images_filename_list = []
         self.features = None
-        self.labels = None
+        #self.labels = None
         self.tumor_class_vector = None
-        self.img_attribs = {}  # dictionary with known attributes by filename
+        self.images_attributes = {}  # dictionary with known attributes by filename
 
-        #mine
+        #dataset specifics
         root_dir = '../BreaKHis_v1/histology_slides/breast'
         srcfiles = {'DC': '%s/malignant/SOB/ductal_carcinoma/%s/%sX/%s',
                 'LC': '%s/malignant/SOB/lobular_carcinoma/%s/%sX/%s',
@@ -47,13 +47,13 @@ class ImagePipeline(object):
                 'TA': '%s/benign/SOB/tubular_adenoma/%s/%sX/%s'}
         self.tumor_types = {'DC', 'LC', 'MC', 'PC', 'A', 'F', 'PT', 'TA'}        
 
-    def _make_label_map(self):
+    #def _make_label_map(self):
         """
         Get the sub directory names and map them to numeric values (labels)
 
         :return: A dictionary of dir names to numeric values
         """
-        return {label: i for i, label in enumerate(self.raw_sub_dir_names)}
+        #return {label: i for i, label in enumerate(self.raw_sub_dir_names)}
 
     def _path_relative_to_parent(self, some_dir):
         """
@@ -82,11 +82,12 @@ class ImagePipeline(object):
         """
         Reset all the image related instance variables
         """
-        self.img_lst2 = []
-        self.img_names2 = []
+        self.images_list = []
+        self.images_filename_list = []
+        # self.labels = None
+        self.images_attributes = {}
         self.features = None
-        self.labels = None
-        self.img_attribs = {}
+        self.tumor_class_vector = None
 
     @staticmethod
     def _accepted_file_format(fname):
@@ -131,34 +132,35 @@ class ImagePipeline(object):
         else:
             return True
 
-    def _assign_sub_dirs(self, sub_dirs=tuple('all')):
+    def _assign_sub_dirs(self, sub_dirs=['all']):
         """
-        Assign the names (self.raw_sub_dir_names) and paths (self.sub_dirs) based on
-        the sub dirs that are passed in, otherwise will just take everything in the
-        parent dir
+        Arguments: 
+        sub_dirs (optional) looks like list(['40X', '100X', '200X', '400X']) or some subset 
+            to specify which magnification to read in. 
 
-        :param sub_dirs: Tuple contain all the sub dir names, else default to all sub dirs
         """
         # Get the list of raw sub dir names
         if sub_dirs[0] == 'all':
-            self.raw_sub_dir_names = tuple('40X', '100X', '200X', '400X')
+            self.raw_sub_dir_names = (['40X', '100X', '200X', '400X'])
         else:
             self.raw_sub_dir_names = sub_dirs
+
+        print('raw_sub_dir_names {}'.format(self.raw_sub_dir_names))
         # Make label to map raw sub dir names to numeric values
-        self.label_map = self._make_label_map()
+        #self.label_map = self._make_label_map()
 
         # Get the full path of the raw sub dirs
         filtered_sub_dir = list(filter(self._accepted_dir_name, self.raw_sub_dir_names))
         self.sub_dirs = map(self._path_relative_to_parent, filtered_sub_dir)
 
-    def read(self, sub_dirs=tuple('all'), brief_mode=False):
+    def read(self, sub_dirs=['all'], brief_mode=False):
         """
-        Read images from each sub directories into a list of matrix (self.img_lst2)
-
-        :param sub_dirs: Tuple contain all the sub dir names, else default to all sub dirs
-        e.g. specify ('40X') for only the 40X sub_dir aka magnification level
+        Read images from each sub directories into a list of matrix (self.images_list)
+        Arguments:
+        sub_dirs: List or tuple contain all the sub dir names, else default to all sub dirs
+            e.g. specify (['40X']) for only the 40X sub_dir aka magnification level
         """
-        if (type(sub_dirs)) != 'list':
+        if (type(sub_dirs)) != '<class \'list\'>':
             print('Invalid sub_dirs data type: {}. List expected'.format(type(sub_dirs)))
 
         # Empty the variables containing the image arrays and image names, features and labels
@@ -184,43 +186,45 @@ class ImagePipeline(object):
                     print('image name 0 {}'.format(os.path.join(root, img_names[0])))
                 if (brief_mode == True and len(img_names) > 0):   
                      img_names = [img_names[0]]
-                self.img_names2.append(img_names)
-                #print ('img_names: {} total shape {}'.format(img_names, self.img_names2 ))
+                self.images_filename_list.append(img_names)
+                #print ('img_names: {} total shape {}'.format(img_names, self.images_filename_list ))
                   
                 img_lst = [io.imread(os.path.join(root, fname)) for fname in img_names]
                 print('len img_lst {}'.format(len(img_lst)))
 
-                self.img_lst2.append(img_lst)
+                self.images_list.append(img_lst)
 
-        # img_lst2 is a list of lists...
-        print('img_lst2 should have list of {} patients, 1st has {} images, filenames of shape {}'.format(len(self.img_lst2), len(self.img_lst2[0]), (self.img_lst2[0][0].shape)))
-        for i in np.arange(0, len(self.img_lst2)):
-            for j in np.arange(0, len(self.img_lst2[i])):
+        # images_list is a list of lists...
+        print('images_list should have list of {} patients, 1st has {} images, filenames of shape {}'.format(len(self.images_list), len(self.images_list[0]), (self.images_list[0][0].shape)))
+        for i in np.arange(0, len(self.images_list)):
+            for j in np.arange(0, len(self.images_list[i])):
                 if (i == 0 and j == 0 ):
-                    print ('first image shape {}'.format(self.img_lst2[i][j].shape))
+                    print ('first image shape {}'.format(self.images_list[i][j].shape))
 
-        # img_names2 is also list of lists...
-        print('img_names2 should have list of {} patients, 1st has {} entries'.format(len(self.img_names2), len(self.img_names2[0])))
-        for i in np.arange(0, len(self.img_names2)):
-            for j in np.arange(0, len(self.img_names2[i])):
+        # images_filename_list is also list of lists...
+        print('images_filename_list should have list of {} patients, 1st has {} entries'.format(len(self.images_filename_list), len(self.images_filename_list[0])))
+        for i in np.arange(0, len(self.images_filename_list)):
+            for j in np.arange(0, len(self.images_filename_list[i])):
                 if (i == 0 and j == 0 ):
-                    print ('first names entry {}'.format(self.img_names2[i][j]))
+                    print ('first names entry {}'.format(self.images_filename_list[i][j]))
             
         # collapse outer nesting to avoid later problems with different length inner lists
-        self.img_lst2 = self.collapse_outer_list(self.img_lst2)    
-        self.img_names2 = self.collapse_outer_list(self.img_names2) 
+        self.images_list = self.collapse_outer_list(self.images_list)    
+        self.images_filename_list = self.collapse_outer_list(self.images_filename_list) 
 
-        # img_lst2 is a list ...
-        print('img_lst2 should have list of {} patients x images, filenames of shape {} '.format(len(self.img_lst2), len(self.img_lst2[0]) ))
-        for i in np.arange(0, len(self.img_lst2)):
+        # images_list is a list ...
+        print('images_list should have list of {} patients x images, filenames of shape {} '.format(len(self.images_list), len(self.images_list[0]) ))
+        for i in np.arange(0, len(self.images_list)):
             if (i == 0 ):
-                print ('first image shape {}'.format(self.img_lst2[i].shape))
+                print ('first image shape {}'.format(self.images_list[i].shape))
 
-        # img_names2 is also lists...
-        print('img_names2 should have list of {} patients * images'.format(len(self.img_names2)))
-        for i in np.arange(0, len(self.img_names2)):
+        # images_filename_list is also lists...
+        print('images_filename_list should have list of {} patients * images'.format(len(self.images_filename_list)))
+        for i in np.arange(0, len(self.images_filename_list)):
             if (i == 0 ):
-                print ('first names entry {}'.format(self.img_names2[i]))
+                print ('first names entry {}'.format(self.images_filename_list[i]))
+
+        self._parse_attributes()
 
     '''
     def save(self, keyword):
@@ -234,7 +238,7 @@ class ImagePipeline(object):
         new_sub_dirs = ['%s.%s' % (sub_dir, keyword) for sub_dir in self.sub_dirs]
 
         # Loop through the sub dirs and loop through images to save images to the respective subdir
-        for new_sub_dir, img_names, img_lst in zip(new_sub_dirs, self.img_names2, self.img_lst2):
+        for new_sub_dir, img_names, img_lst in zip(new_sub_dirs, self.images_filename_list, self.images_list):
             new_sub_dir_path = self._path_relative_to_parent(new_sub_dir)
             self._make_new_dir(new_sub_dir_path)
 
@@ -254,7 +258,7 @@ class ImagePipeline(object):
         # prolly dont' want this
         print('in ip.show, sub_dir = {} and sub_dir_ind = {} and map {}'.format(sub_dir, sub_dir_ind, self.label_map))
 
-        io.imshow(self.img_lst2[0][img_ind])  # prolly change sub_dir to sub_dir_ind (0-81)
+        io.imshow(self.images_list[0][img_ind])  # prolly change sub_dir to sub_dir_ind (0-81)
         plt.show()
     '''
     def collapse_outer_list(self, nested_list):
@@ -275,14 +279,11 @@ class ImagePipeline(object):
         :param sub_dir: The name of the category # deprecated
         :param img_ind: The index of the category of images
         """
-        #sub_dir_ind = self.label_map[sub_dir]
-        # prolly dont' want this
-        #print('in ip.show, sub_dir = {} and sub_dir_ind = {} and map {}'.format(sub_dir, sub_dir_ind, self.label_map))
 
-        io.imshow(self.img_lst2[img_ind])  
+        io.imshow(self.images_list[img_ind])  
         plt.show()    
-        return self.img_lst2[img_ind]
-
+        return self.images_list[img_ind]
+            
     '''
     def savefig(self, sub_dir, img_ind, file_attrib):
         """
@@ -293,7 +294,7 @@ class ImagePipeline(object):
         """
         print ('**** in savefig() *****')
         sub_dir_ind = self.label_map[sub_dir]
-        io.imshow(self.img_lst2[sub_dir_ind][img_ind])
+        io.imshow(self.images_list[sub_dir_ind][img_ind])
         plt.show()
         filename = sub_dir + str(img_ind) + '_' + file_attrib + '.png'
         print(filename)
@@ -314,7 +315,7 @@ class ImagePipeline(object):
         rtn_dict = {}
         # get sub_dir and img_ind for each dictionary item
         for k, v in img_dict.items():
-            idx = self.get_img_lst2_indices(k)
+            idx = self.get_image_index(k)
 
             changed_img = self.get_transform_copy(func, params, img_ind=idx )
             rtn_dict[k] = changed_img
@@ -327,43 +328,43 @@ class ImagePipeline(object):
         instead of updating the source images
         Have to option to transform one as  a test case
 
-        :param sub_dir_ind: The index for the image in img_lst2
+        :param sub_dir_ind: The index for the image in images_list
         :param img_ind: The index of the category of images
 
         returns transformed image(s) instead of updating self
         """
         # Apply to one test case
         if img_ind is not None:
-            img_arr = self.img_lst2[img_ind]
+            img_arr = self.images_list[img_ind]
             img_arr = func(img_arr, **params).astype(float)
             return(img_arr)
         else:  # This is a lot, fyi
-            new_img_lst2 = self.img_lst2
-            new_img_lst2 = ([func(img_arr, **params).astype(float) for img_arr in self.img_lst2])
-            return(new_img_lst2)
+            new_images_list = self.images_list
+            new_images_list = ([func(img_arr, **params).astype(float) for img_arr in self.images_list])
+            return(new_images_list)
 
     def transform(self, func, params, img_ind=None):
         """
         Takes a function and apply to every img_arr in self.img_arr.
         Have to option to transform one as  a test case
 
-        :param sub_dir_ind: The index for the image in img_lst2  # deprecated
+        :param sub_dir_ind: The index for the image in images_list  # deprecated
         :param img_ind: The index of the category of images
         """
         # Apply to one test case
         if img_ind is not None:
-            img_arr = self.img_lst2[img_ind]
+            img_arr = self.images_list[img_ind]
             img_arr = func(img_arr, **params).astype(float)
             io.imshow(img_arr)
             plt.show()
         # Apply the function and parameters to all the images
         else:
-            new_img_lst2 = ([func(img_arr, **params).astype(float) for img_arr in self.img_lst2])
-            self.img_lst2 = new_img_lst2
+            new_images_list = ([func(img_arr, **params).astype(float) for img_arr in self.images_list])
+            self.images_list = new_images_list
 
     def grayscale(self, img_ind=None):
         """
-        Grayscale all the images in self.img_lst2
+        Grayscale all the images in self.images_list
 
         :param img_ind: The index of the image within the chosen sub dir
         """
@@ -371,7 +372,7 @@ class ImagePipeline(object):
 
     def canny(self, img_ind=None):
         """
-        Apply the canny edge detection algorithm to all the images in self.img_lst2
+        Apply the canny edge detection algorithm to all the images in self.images_list
 
         :param img_ind: The index of the image within the chosen sub dir
         """
@@ -379,15 +380,15 @@ class ImagePipeline(object):
 
     def dye_separation(self, img_ind=None):
         """
-        Apply the canny edge detection algorithm to all the images in self.img_lst2
+        Apply the dye separation detection algorithm to all the images in self.images_list
 
         :param img_ind: The index of the image within the chosen sub dir
         """
-        self.transform(dye_separation, {}, img_ind=img_ind)
+        self.transform(self.dye_separation, {}, img_ind=img_ind)
 
     def tv_denoise(self, weight=2, multichannel=True, img_ind=None):
         """
-        Apply to total variation denoise to all the images in self.img_lst2
+        Apply to total variation denoise to all the images in self.images_list
 
         :param img_ind: The index of the image within the chosen sub dir
         """
@@ -397,7 +398,7 @@ class ImagePipeline(object):
 
     def resize(self, shape, save=False):
         """
-        Resize all images in self.img_lst2 to a uniform shape
+        Resize all images in self.images_list to a uniform shape
 
         :param shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
         :param save: Boolean to save the images in new directories or not
@@ -414,44 +415,30 @@ class ImagePipeline(object):
         row represents an image
         """
 
-        print('img_lst2 len {} should be 1 '.format(len(self.img_lst2) ), len(self.img_lst2[0]), len(self.img_lst2[1]))
+        print('images_list len {} should be 1 '.format(len(self.images_list) ), len(self.images_list[0]), len(self.images_list[1]))
 
-        for i in np.arange(0, len(self.img_lst2)):
-            #j = len(self.img_lst2[i])
-            print ('len of sub list {} {}'.format(i, len(self.img_lst2)))
+        for i in np.arange(0, len(self.images_list)):
+            #j = len(self.images_list[i])
+            print ('len of sub list {} {}'.format(i, len(self.images_list)))
 
         # tupli-tizes each row in each sub list, sometimes of different lengths (ok)
         row_tup = tuple(img_arr.ravel()[np.newaxis, :]
-                        for img_arr in self.img_lst2 )
+                        for img_arr in self.images_list )
         # r_ will mess up, however, if the image dimensions are not consistent with error
         # ValueError: all the input array dimensions except for the concatenation axis must match exactly
         self.features = np.r_[row_tup]
         
-    def _vectorize_features_b(self):
+    def _vectorize_X(self):
         """
-        Take a list of images and vectorize all the images. Returns a 4D feature matrix 
+        Take a list of images and vectorize all the images. Returns a 3D feature matrix 
         """
+        print('images_list len {} '.format(len(self.images_list) ))
+        to_array = np.array(self.images_list, dtype=np.float32)
 
-        print('img_lst2 len {} '.format(len(self.img_lst2) ))
-        #dim1 = len(self.img_lst2)
-        #dim2 = len(self.img_lst2[0])
-        #dim3 = len(self.img_lst2[1])
-        #dim4 = 227
-        #for i in np.arange(0, len(self.img_lst2)):
-        #for j in np.arange(0, len(self.img_lst2[i])):
-        #print ('whole shebang patient 0{}'.format(self.img_lst2[0]))
-        
-        to_array = np.array(self.img_lst2, dtype=np.float32)
-        '''
-        outer_np_list = []
-        for i in np.arange(len(self.img_lst2)):
-            to_array = np.array(self.img_lst2[i], dtype=np.float64)
-            outer_np_list.append(to_array)
-        '''
         #full_np = np.stack(outer_np_list)    #ValueError('all input arrays must have the same shape')
         #print('shape of full_np {}'.format(full_np.shape))
 
-        print('shape of np array converted img_lst2 going in {}'.format(to_array.shape))
+        print('shape of np array converted images_list going in {}'.format(to_array.shape))
         #new_dim = to_array.shape[0] * to_array.shape[1]
         #new_shape = tuple( (to_array.shape[0] to_array.shape[1], to_array.shape[3]))
         #print( 'lets reshape as {}'.format(new_shape))
@@ -463,18 +450,20 @@ class ImagePipeline(object):
         # tupli-tizes each row in each sub list, sometimes of different lengths (ok)
         
         #row_tup = tuple(img_arr.ravel()[np.newaxis, :]
-        #                for img_lst in self.img_lst2 for img_arr in img_lst)
+        #                for img_lst in self.images_list for img_arr in img_lst)
         # r_ will mess up, however, if the image dimensions are not consistent with error
         # ValueError: all the input array dimensions except for the concatenation axis must match exactly
         self.features = to_array
 
+    '''
     def _vectorize_labels(self):
         """
         Convert file names to a list of y labels (in the example it would be either cat or dog, 1 or 0)
         """
         # Get the labels with the dimensions of the number of image files
         self.labels = np.concatenate([np.repeat(i, len(img_names))
-                                     for i, img_names in enumerate(self.img_names2)])
+                                     for i, img_names in enumerate(self.images_filename_list)])
+    '''
 
     @staticmethod
     def _parse_filename(filename):
@@ -510,16 +499,16 @@ class ImagePipeline(object):
         return d1     
 
 
-    def vectorize_y (self):
+    def _vectorize_y (self):
         ''' 
-        Assuming _vectorize_attribs has parsed the filenames for M (malignant) and B (benign), 
+        Assuming _parse_attributes has parsed the filenames for M (malignant) and B (benign), 
         create the y vector, represented in self.tumor_class_vector
 
         '''
 
-        arr = np.zeros(len(self.img_attribs), dtype = np.int32)
+        arr = np.zeros(len(self.images_attributes), dtype = np.int32)
         i = 0
-        for k1, v1 in self.img_attribs.items():
+        for k1, v1 in self.images_attributes.items():
             if i < 40:
                 print (v1)
             if (v1['tumor_class'] == "M"):
@@ -532,35 +521,35 @@ class ImagePipeline(object):
 
 
         #self.diagnosis = np.concatenate([np.repeat( v1['diagnosis'])
-        #            for k1, v1 in self.img_attribs.items()])
+        #            for k1, v1 in self.images_attributes.items()])
 
         #print ('tumor_class vector : {}'.format(self.tumor_class_vector [:20]))
 
 
 
 
-    def _vectorize_attribs(self):
+    def _parse_attributes(self):
         ''' 
         parse and collect the attributes of each file by filename
 
         '''
         d1 = {}
-        for i in np.arange(0, len(self.img_names2)):
-            #print ('image name to parse {}'.format(self.img_names2[i][j]))
-            filename = self.img_names2[i]
+        for i in np.arange(0, len(self.images_filename_list)):
+            #print ('image name to parse {}'.format(self.images_filename_list[i][j]))
+            filename = self.images_filename_list[i]
             d_one = self._parse_filename(filename)
             d1[filename] = d_one[filename]
                 
         # let's add original image sizes (assumes same dimensions)
         # only do this the first time
-        for i in np.arange(0, len(self.img_lst2)):
-            fn = self.img_names2[i]
-            d1[fn].update({'image_size' : self.img_lst2[i].shape})
+        for i in np.arange(0, len(self.images_list)):
+            fn = self.images_filename_list[i]
+            d1[fn].update({'image_size' : self.images_list[i].shape})
             if i == 0:
                 print (d1[fn])
 
-        self.img_attribs = d1                
-        #print (self.img_attribs)
+        self.images_attributes = d1                
+        #print (self.images_attributes)
 
 
 
@@ -570,25 +559,25 @@ class ImagePipeline(object):
         Run at the end of all transformations
         """
         # these are all arrays
-        self._vectorize_features_b()
+        self._vectorize_X()
         print ('features shape {}'.format( self.features.shape))
-        self._vectorize_labels()
-        print ('labels shape {}'.format( self.labels.shape))
-        self._vectorize_attribs()
-        print ('attribs (dict) len {}'.format( len(self.img_attribs)))
+        #self._vectorize_labels()
+        #print ('labels shape {}'.format( self.labels.shape))
 
-    def get_img_lst2_indices(self, filename):
+        print ('attribs (dict) len {}'.format( len(self.images_attributes)))
+        self._vectorize_y()
+
+    def get_image_index(self, filename):
         '''
-        Gets the sub_dir_ind (first level index) and 2nd level index to use
-        as an address for the images in self.img_lst2
-        (as well as self.img_names2 and self.img_attribs)
+        Args:
+        filename without path
         Used before calling transform()
-        returns tuple of outer_i and inner_i
+        returns int index to be used as an address for the images in self.images_list
 
         '''
  
-        idx = self.img_names2.index(filename)    
-        print ('found fn {} at nested index [{}]'.format(filename, idx))
+        idx = self.images_filename_list.index(filename)    
+        print ('found fn {} at index [{}]'.format(filename, idx))
 
         return idx
         
@@ -600,11 +589,11 @@ class ImagePipeline(object):
         '''
         img8_lst = []
         img_dict = {}
-        # look through img_attribs for first instance of each tumor type
+        # look through images_attributes for first instance of each tumor type
         for i, ttype in enumerate (self.tumor_types):
             print ('getting sample of type {}'.format(ttype))
             # list of a generator expression (which does same thing as a list comprehension, fancy!)
-            found_keys = list(k for k, v in self.img_attribs.items() if ttype == v['tumor_type'])
+            found_keys = list(k for k, v in self.images_attributes.items() if ttype == v['tumor_type'])
             #print ('found_keys {}'.format(found_keys))
             fn = found_keys[0]
             # get first one's filename to test
@@ -612,18 +601,18 @@ class ImagePipeline(object):
 
             # find filename position in img_names()
             #j = self.img_names[fn].index
-            #found_keys2 = list(j for j, lst in enumerate(self.img_names2) if fn in lst)
+            #found_keys2 = list(j for j, lst in enumerate(self.images_filename_list) if fn in lst)
 
-            outer_i, inner_i = self.get_img_lst2_indices(fn)
+            idx = self.get_image_index(fn)
             '''
-            outer_i = next(j for j, lst in enumerate(self.img_names2) if fn in lst)
+            outer_i = next(j for j, lst in enumerate(self.images_filename_list) if fn in lst)
             print ('outer_i {} {}'.format(type(outer_i), outer_i))
             if outer_i == None:
                 print ('**** There is a bug *****')
-            inner_i = self.img_names2[outer_i].index(fn)    
+            inner_i = self.images_filename_list[outer_i].index(fn)    
             print ('found fn {} at nested index [{}] [{}]'.format(fn, outer_i, inner_i))
             '''
-            img = self.get_image(outer_i, inner_i)
+            img = self.get_image(idx)
 
             img8_lst.append(img)
             img_dict[fn] = img
@@ -645,74 +634,8 @@ if __name__ == '__main__':
         - histology_slides
             - breast  (more subdirs and files)
 
-    
-    root_dir = './data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
-    
-    IP = ImagePipeline(root_dir)
-    for root,d_names,f_names in os.walk(root_dir):
-     
-        if (len(f_names) > 0):    # files found ending in .png?
-            print (root, d_names, f_names) 
-            # loop through filenames, read image and parse/store attributes
     '''
 
-# FROM Keras Dog/Cat ex
-'''
-num_skipped = 0
-for folder_name in ("Cat", "Dog"):
-    folder_path = os.path.join("PetImages", folder_name)
-    for fname in os.listdir(folder_path):
-        fpath = os.path.join(folder_path, fname)
-        try:
-            fobj = open(fpath, "rb")
-            is_jfif = tf.compat.as_bytes("JFIF") in fobj.peek(10)
-        finally:
-            fobj.close()
-
-        if not is_jfif:
-            num_skipped += 1
-            # Delete corrupted image
-            os.remove(fpath)
-
-print("Deleted %d images" % num_skipped)
-
-"""
-## Generate a `Dataset`
-"""
-
-image_size = (180, 180)
-batch_size = 32
-
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "PetImages",
-    validation_split=0.2,
-    subset="training",
-    seed=1337,
-    image_size=image_size,
-    batch_size=batch_size,
-)
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "PetImages",
-    validation_split=0.2,
-    subset="validation",
-    seed=1337,
-    image_size=image_size,
-    batch_size=batch_size,
-)
-
-"""
-## Visualize the data
-
-Here are the first 9 images in the training dataset. As you can see, label 1 is "dog"
- and label 0 is "cat".
-"""
 
 
-plt.figure(figsize=(10, 10))
-for images, labels in train_ds.take(1):
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(images[i].numpy().astype("uint8"))
-        plt.title(int(labels[i]))
-        plt.axis("off")
-'''
+
