@@ -6,23 +6,26 @@ Breast cancer tumor biopsy classification of benign or malignant remains a very 
 The goal of this project is to train and tune a convoluted artificial network (CNN) to accurately classify breast cancer biopsies as malignant or benign.  Some recent [studies](https://arxiv.org/abs/1811.12231) suggest CNNs may be biased do better than textures than shapes, implying Deep neural networks are particularly suited to pattern recognition, perhaps gaining better results without first identifying the same features a human would look for.  
 
 # Data Source
-I have utilized the [BreakHis](https://web.inf.ufpr.br/vri/databases/breast-cancer-histopathological-database-breakhis/) database, which has been accumulated from the result of a survey by P&D Lab, Brazil in 2014. Breast tissues are taken as samples by the procedure of surgical (open) biopsy (SOB). Samples are stained by hematoxylin and eosin (HE) and produced by a standard paraffin process in which specimen infiltration and embedment are done in paraffin. These histopathology images have a RGB (three channel) TrueColor (8 bits- Red, 8 bits- Green, 8 bits- Blue) color coding scheme. This database contains a total of 7909 images of 700x460 pixel resolution. Images are captured in four different magnification levels, 40X, 100X, 200X, and 400X.  As prior studies have acheived about 5% higher prediction results with the higher magnifications, highest with 200x, I'll focus on that particular dataset.    
+I have utilized the [BreakHis](https://web.inf.ufpr.br/vri/databases/breast-cancer-histopathological-database-breakhis/) database, which has been accumulated from the result of a survey by P&D Lab, Brazil in 2014. Breast tissues are taken as samples by the procedure of surgical (open) biopsy (SOB). Samples are stained by hematoxylin and eosin (HE) and produced by a standard paraffin process in which specimen infiltration and embedment are done in paraffin. These histopathology images have a RGB (three channel) TrueColor (8 bits- Red, 8 bits- Green, 8 bits- Blue) color coding scheme. This database contains a total of 7909 images of 700x460 pixel resolution. Images are captured in four different magnification levels, 40X, 100X, 200X, and 400X.  As prior studies have achieved about 5% higher prediction results with the higher magnifications, highest with 200X, I'll focus there with 2013 samples, 623 of which are benign.    
 
 ![Chart of data](imgs/sample_counts_b_v_m.png)
 
 The data is classified as Benign or Malignant, and represents 4 different types of tumor in each classification.  
 
 Benign
-![Sample Benign](imgs/benign_sample2.png) Malignant ![Sample Malignant](imgs/malignant_sample3.png)
+![Sample Benign](imgs/benign_sample2.png) 
+
+Malignant 
+![Sample Malignant](imgs/malignant_sample3.png)
 
 
 
 # EDA 
 
 ## Feature Identification / Image Pre-processing
-In the visual context, malignant tumors tend to have large and irregular nuclei or multiple nuclear structures. The cytoplasm also undergoes changes, wherein new structures appear, or normal structures disappear. Malignant cells have a small cytoplasmic amount (either intensely colored or on the contrary, very pale), frequently with vacuoles. In this scenario, the ratio of cytoplasm to nucleus decreases. We can use image pre-processing to help "bring forward" the features that may help identify malignant vs benign tumors, to amplify nuclei and cytoplasm and ignore unintersting features like fatty regions.
+In the visual context, malignant tumors tend to have large and irregular nuclei or multiple nuclear structures. The cytoplasm also undergoes changes, wherein new structures appear, or normal structures disappear. Malignant cells have a small cytoplasmic amount (either intensely colored or on the contrary, very pale), frequently with vacuoles. In this scenario, the ratio of cytoplasm to nucleus decreases. We can use image pre-processing to help "bring forward" the features that may help identify malignant vs benign tumors, to amplify nuclei and cytoplasm and ignore uninteresting features like fatty regions.
 
-*Interesing pre-processing transformations*
+*Interesting pre-processing transformations*
 
 Analyzed the following types of image pre-processing, we're looking for patterns we might be able to highlight to make it easier for the model to recongize:
 
@@ -34,7 +37,7 @@ Analyzed the following types of image pre-processing, we're looking for patterns
 
 ![hematoxylin](imgs/Hematoxylin.png) ![eosin](imgs/Eosin.png)
 
-These can be used as input in place of the full color images to see if any improvement in learning can be gained. 
+These can be superimposed and used as input in place of the full color images to see if any improvement in learning can be gained. 
 
 In the case of supervised learning, we do not need to provide these features explicitly. In this case images are fed to the CNN, along with each class as a label (Benign (B) or Malignant (M)). From the automatic update of filter values in the training process, CNN should be able to extract the computational features. 
 
@@ -51,7 +54,7 @@ Data Augmentation (slight rotation, flip, zoom to produce new samples) Helps Sol
 
 # Model Selection
 
-### Choice of Hypterparameters
+### Choice of Hyperparameters
 * number of filters
 * dimensions of convolution layer
 * dimensions of pooling layer (reduces dimensions, reduces variance)
@@ -61,7 +64,9 @@ Credit Dabeer et al.
 
 
 Loss function - Sparse_categorical_crossentropy. 
+
 Optimizer - Adadelta did better at showing a steady decrease in loss rate
+
 Metrics - Accuracy 
 
 **Table 1. Parameters of the Convolutional Layer Parameters**

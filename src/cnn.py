@@ -220,12 +220,12 @@ class CNN(object):
                 validation_data = (self.X_test, self.y_test)
                 )
         else:
-            # history = 
+
             self.history = self.model.fit(self.datagen, 
                 epochs=nb_epoch, 
                 verbose=1,
-                validation_data = self.val_datagen)
-                # validation_steps = 3) # getting killed here
+                validation_data = self.val_datagen,
+                validation_steps = 3)
                 #max_queue_gen = 10 )   # default
                 #steps_per_epoch=500, # (len(self.X_train) / batch_size, nb_epoch),
                 #steps_per_epoch= (len(self.X_train) / batch_size, nb_epoch))
