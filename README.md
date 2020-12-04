@@ -13,9 +13,11 @@ I have utilized the [BreakHis](https://web.inf.ufpr.br/vri/databases/breast-canc
 The data is classified as Benign or Malignant, and represents 4 different types of tumor in each classification.  
 
 Benign
+
 ![Sample Benign](imgs/benign_sample2.png) 
 
 Malignant 
+
 ![Sample Malignant](imgs/malignant_sample3.png)
 
 
@@ -55,19 +57,14 @@ Data Augmentation (slight rotation, flip, zoom to produce new samples) Helps Sol
 # Model Selection
 
 ### Choice of Hyperparameters
-* number of filters
-* dimensions of convolution layer
-* dimensions of pooling layer (reduces dimensions, reduces variance)
+* Loss function - Sparse_categorical_crossentropy. 
+* Optimizer - Adadelta did better at showing a steady decrease in loss rate than Adam or SGD
+* Metrics - Accuracy, then F-1 
+* Learning Rate / Epochs - slow
 
 ![model](imgs/CNN-model.jpg)
 Credit Dabeer et al.
 
-
-Loss function - Sparse_categorical_crossentropy. 
-
-Optimizer - Adadelta did better at showing a steady decrease in loss rate
-
-Metrics - Accuracy 
 
 **Table 1. Parameters of the Convolutional Layer Parameters**
 | Layer         | L1   | L2   | L3   | L4   | L5   | 
