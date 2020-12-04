@@ -10,14 +10,16 @@ from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
 from skimage import color, transform, restoration, io, feature
 
+verbose = False
 
 class ImagePipeline(object):
     
     def __init__(self, parent_dir):
         """
         Manages reading, transforming and saving images
+        Arguments:
+            parent_dir: Name of the parent directory containing all the sub directories
 
-        :param parent_dir: Name of the parent directory containing all the sub directories
         """
         # Define the parent directory
         self.parent_dir = parent_dir
@@ -46,6 +48,8 @@ class ImagePipeline(object):
                 'PT': '%s/benign/SOB/phyllodes_tumor/%s/%sX/%s',
                 'TA': '%s/benign/SOB/tubular_adenoma/%s/%sX/%s'}
         self.tumor_types = {'DC', 'LC', 'MC', 'PC', 'A', 'F', 'PT', 'TA'}        
+        self.malig_tumor_types = {'DC', 'MC', 'PC', 'LC'}
+        self.benign_tumor_types = {'A', 'TA', 'F', 'PT'}
 
     #def _make_label_map(self):
         """
@@ -111,10 +115,7 @@ class ImagePipeline(object):
         :return: True or False (if the subdir is accpeted or not)
         """
         subdirs = self.raw_sub_dir_names
-        print ('raw sd names {} and data type {}'.format(self.raw_sub_dir_names, type(self.raw_sub_dir_names)))
-        print('compare dir_name {} w subdirs list {}'.format(dir_name, subdirs))
         for sd in subdirs:
-            print('compare dir_name {} w ea sd {}'.format(dir_name, sd))
             if dir_name == sd:
                 return True
         return False    
@@ -145,7 +146,7 @@ class ImagePipeline(object):
         else:
             self.raw_sub_dir_names = sub_dirs
 
-        print('raw_sub_dir_names {}'.format(self.raw_sub_dir_names))
+        if verbose: print('raw_sub_dir_names {}'.format(self.raw_sub_dir_names)) 
         # Make label to map raw sub dir names to numeric values
         #self.label_map = self._make_label_map()
 
@@ -160,8 +161,6 @@ class ImagePipeline(object):
         sub_dirs: List or tuple contain all the sub dir names, else default to all sub dirs
             e.g. specify (['40X']) for only the 40X sub_dir aka magnification level
         """
-        if (type(sub_dirs)) != '<class \'list\'>':
-            print('Invalid sub_dirs data type: {}. List expected'.format(type(sub_dirs)))
 
         # Empty the variables containing the image arrays and image names, features and labels
         self._empty_variables()
@@ -169,40 +168,40 @@ class ImagePipeline(object):
         # Assign the sub dir names based on what is passed in
         self._assign_sub_dirs(sub_dirs=sub_dirs)  
 
-        print('root dir {}'.format(self.parent_dir))
+        if verbose: print('root dir {}'.format(self.parent_dir)) 
         # ToDo: test parent_dir is valid and give error message
 
         for root,d_names,f_names in os.walk(self.parent_dir):
-            print ('traverse {}\t {}\t {}'.format(root, d_names, len(f_names)))  
+            if verbose: print ('traverse {}\t {}\t {}'.format(root, d_names, len(f_names)))  
 
             # Test last folder for 40X, 100X, 200X, 400X
             fldr = root.split("/")[-1:]
-            print("fldr {}".format(fldr))
+            #print("fldr {}".format(fldr))
 
             if self._accepted_subdir(fldr[0]):
-                print ('valid subdir {}'.format(fldr[0]))
+                if verbose: print ('valid subdir {}'.format(fldr[0])) 
                 img_names = list(filter(self._accepted_file_format, f_names))
                 if len(img_names) > 0:
-                    print('image name 0 {}'.format(os.path.join(root, img_names[0])))
+                    if verbose: print('image name 0 {}'.format(os.path.join(root, img_names[0]))) 
                 if (brief_mode == True and len(img_names) > 0):   
                      img_names = [img_names[0]]
                 self.images_filename_list.append(img_names)
                 #print ('img_names: {} total shape {}'.format(img_names, self.images_filename_list ))
                   
                 img_lst = [io.imread(os.path.join(root, fname)) for fname in img_names]
-                print('len img_lst {}'.format(len(img_lst)))
+                if verbose: print('len img_lst {}'.format(len(img_lst)))
 
                 self.images_list.append(img_lst)
 
         # images_list is a list of lists...
-        print('images_list should have list of {} patients, 1st has {} images, filenames of shape {}'.format(len(self.images_list), len(self.images_list[0]), (self.images_list[0][0].shape)))
+        #print('images_list should have list of {} patients, 1st has {} images, filenames of shape {}'.format(len(self.images_list), len(self.images_list[0]), (self.images_list[0][0].shape)))
         for i in np.arange(0, len(self.images_list)):
             for j in np.arange(0, len(self.images_list[i])):
                 if (i == 0 and j == 0 ):
                     print ('first image shape {}'.format(self.images_list[i][j].shape))
 
         # images_filename_list is also list of lists...
-        print('images_filename_list should have list of {} patients, 1st has {} entries'.format(len(self.images_filename_list), len(self.images_filename_list[0])))
+        #print('images_filename_list should have list of {} patients, 1st has {} entries'.format(len(self.images_filename_list), len(self.images_filename_list[0])))
         for i in np.arange(0, len(self.images_filename_list)):
             for j in np.arange(0, len(self.images_filename_list[i])):
                 if (i == 0 and j == 0 ):
@@ -269,15 +268,15 @@ class ImagePipeline(object):
         new_list = []
         for i, sub_list in enumerate(nested_list):
             new_list.extend(sub_list)
-        print('collapsed {}x{}ish list to {}'.format(len(nested_list), len(nested_list[0]), len(new_list)))
+        if verbose: print('collapsed {}x{}ish list to {}'.format(len(nested_list), len(nested_list[0]), len(new_list))) 
         return new_list
 
     def get_image(self, img_ind):
         """
         View the nth image 
-
-        :param sub_dir: The name of the category # deprecated
-        :param img_ind: The index of the category of images
+        Arguments:
+            sub_dir: The name of the category # deprecated
+            img_ind: The index of the category of images
         """
 
         io.imshow(self.images_list[img_ind])  
@@ -288,9 +287,9 @@ class ImagePipeline(object):
     def savefig(self, sub_dir, img_ind, file_attrib):
         """
         Save the nth image in the nth class
-
-        :param sub_dir: The name of the category
-        :param img_ind: The index of the category of images
+        Arguments:
+            sub_dir: The name of the category
+            img_ind: The index of the category of images
         """
         print ('**** in savefig() *****')
         sub_dir_ind = self.label_map[sub_dir]
@@ -303,8 +302,10 @@ class ImagePipeline(object):
 
     def transform_dict (self, func, params, img_dict):
         '''
-        Args: img_dict is a dictionary of filename and images
-        Returns: img_dict after the function is applied
+        Arguments: 
+            img_dict is a dictionary of filename and images
+        Returns: 
+            img_dict after the function is applied
         This function gets the parameters needed to call transform for
         each image, builds a new image dictionary, shows and saves it,
         and returns it.  
@@ -327,11 +328,12 @@ class ImagePipeline(object):
         Takes a function and apply to every img_arr in self.img_arr returning a copy 
         instead of updating the source images
         Have to option to transform one as  a test case
+        Arguments:
+            sub_dir_ind: The index for the image in images_list
+            img_ind: The index of the category of images
 
-        :param sub_dir_ind: The index for the image in images_list
-        :param img_ind: The index of the category of images
-
-        returns transformed image(s) instead of updating self
+        Returns: 
+            transformed image(s) instead of updating self
         """
         # Apply to one test case
         if img_ind is not None:
@@ -347,9 +349,9 @@ class ImagePipeline(object):
         """
         Takes a function and apply to every img_arr in self.img_arr.
         Have to option to transform one as  a test case
-
-        :param sub_dir_ind: The index for the image in images_list  # deprecated
-        :param img_ind: The index of the category of images
+        Arguments:
+            sub_dir_ind: The index for the image in images_list  # deprecated
+            img_ind: The index of the category of images
         """
         # Apply to one test case
         if img_ind is not None:
@@ -365,32 +367,33 @@ class ImagePipeline(object):
     def grayscale(self, img_ind=None):
         """
         Grayscale all the images in self.images_list
-
-        :param img_ind: The index of the image within the chosen sub dir
+        Arguments:
+            img_ind: The index of the image within the chosen sub dir
         """
         self.transform(color.rgb2gray, {}, img_ind=img_ind)
 
     def canny(self, img_ind=None):
         """
         Apply the canny edge detection algorithm to all the images in self.images_list
-
-        :param img_ind: The index of the image within the chosen sub dir
+        Arguments:
+            img_ind: The index of the image within the chosen sub dir
         """
         self.transform(feature.canny, {}, img_ind=img_ind)
 
     def dye_separation(self, img_ind=None):
         """
         Apply the dye separation detection algorithm to all the images in self.images_list
-
-        :param img_ind: The index of the image within the chosen sub dir
+        Arguments:
+            img_ind: The index of the image within the chosen sub dir
         """
         self.transform(self.dye_separation, {}, img_ind=img_ind)
 
-    def tv_denoise(self, weight=2, multichannel=True, img_ind=None):
+    def tv_denoise(self, weight=.3, multichannel=True, img_ind=None):
         """
         Apply to total variation denoise to all the images in self.images_list
-
-        :param img_ind: The index of the image within the chosen sub dir
+        Arguments:
+            img_ind: The index of the image within the chosen sub dir
+            weight: the chambolle denoising weight to use 
         """
         self.transform(restoration.denoise_tv_chambolle,
                        dict(weight=weight, multichannel=multichannel),
@@ -399,9 +402,9 @@ class ImagePipeline(object):
     def resize(self, shape, save=False):
         """
         Resize all images in self.images_list to a uniform shape
-
-        :param shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
-        :param save: Boolean to save the images in new directories or not
+        Arguments:
+            shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
+            save: Boolean to save the images in new directories or not
         """
         self.transform(transform.resize, dict(output_shape=shape))
         
@@ -409,10 +412,13 @@ class ImagePipeline(object):
         #    shape_str = '_'.join(map(str, shape))
         #    self.save(shape_str)
 
+    '''
     def _vectorize_features(self):
         """
         Take a list of images and vectorize all the images. Returns a feature matrix where each
         row represents an image
+
+        Deprecated, because this needs same sized lists of images to work
         """
 
         print('images_list len {} should be 1 '.format(len(self.images_list) ), len(self.images_list[0]), len(self.images_list[1]))
@@ -427,32 +433,15 @@ class ImagePipeline(object):
         # r_ will mess up, however, if the image dimensions are not consistent with error
         # ValueError: all the input array dimensions except for the concatenation axis must match exactly
         self.features = np.r_[row_tup]
-        
+    '''    
     def _vectorize_X(self):
         """
         Take a list of images and vectorize all the images. Returns a 3D feature matrix 
         """
         print('images_list len {} '.format(len(self.images_list) ))
         to_array = np.array(self.images_list, dtype=np.float32)
-
-        #full_np = np.stack(outer_np_list)    #ValueError('all input arrays must have the same shape')
-        #print('shape of full_np {}'.format(full_np.shape))
-
         print('shape of np array converted images_list going in {}'.format(to_array.shape))
-        #new_dim = to_array.shape[0] * to_array.shape[1]
-        #new_shape = tuple( (to_array.shape[0] to_array.shape[1], to_array.shape[3]))
-        #print( 'lets reshape as {}'.format(new_shape))
 
-        #img_arr = np.stack(to_array.reshape(new_shape))
-
-        #print('shape of sub list array-itized inner {} main '.format(img_arr.shape))
-                
-        # tupli-tizes each row in each sub list, sometimes of different lengths (ok)
-        
-        #row_tup = tuple(img_arr.ravel()[np.newaxis, :]
-        #                for img_lst in self.images_list for img_arr in img_lst)
-        # r_ will mess up, however, if the image dimensions are not consistent with error
-        # ValueError: all the input array dimensions except for the concatenation axis must match exactly
         self.features = to_array
 
     '''
@@ -468,7 +457,7 @@ class ImagePipeline(object):
     @staticmethod
     def _parse_filename(filename):
         '''
-        grabs the bits and pieces from the filename, e.g. SOB_M_DC-14-11951-100-008
+        grabs the bits and pieces from the filename, 
             BIOPSY_PROCEDURE, e.g. “SOB” is the Surgical Open Biopsy procedure name and CNB is for Core Needle Biopsy
             TUMOR_CLASS  “M” for malignant, “B” for benign
             TUMOR_TYPE: adenosis (A), fibroadenoma (F), phyllodes tumor (PT), and tubular adenona (TA), carcinoma (DC), lobular carcinoma (LC), mucinous carcinoma (MC) and papillary carcinoma (PC)
@@ -476,7 +465,11 @@ class ImagePipeline(object):
             SLIDE_ID
             MAG: Magnification Level (40x, 100x, 200x, or 400x)
             SEQ: Sample number (e.g 001, 002, etc)
-        returns a single entry dictionary line
+
+        Arguments:
+            filename is the key, not including path e.g. SOB_M_DC-14-11951-100-008
+        returns 
+            single entry dictionary line
         '''
 
         d1 = {}
@@ -504,29 +497,44 @@ class ImagePipeline(object):
         Assuming _parse_attributes has parsed the filenames for M (malignant) and B (benign), 
         create the y vector, represented in self.tumor_class_vector
 
+        Return array of 1 or 0 for Malignant or Benign
         '''
 
         arr = np.zeros(len(self.images_attributes), dtype = np.int32)
         i = 0
         for k1, v1 in self.images_attributes.items():
-            if i < 40:
-                print (v1)
+            if i < 4:
+                print (v1) 
             if (v1['tumor_class'] == "M"):
                 arr[i] = 1
                 i += 1        
 
         print ('tumor_class vector num malig {} out of {} samples'.format(np.sum(arr), len(arr)))
-        self.tumor_class_vector = arr
+
+        return arr
 
 
 
-        #self.diagnosis = np.concatenate([np.repeat( v1['diagnosis'])
-        #            for k1, v1 in self.images_attributes.items()])
+    def get_images_of_class (self, tumor_class, magnification=None):
+        '''
+        Useful for EDA, browsing images
+        Arguments:
+            class is string to indicate tumor class of 'M' or 'B'
+            magnification is int 40, 100, 200, or 400. None should look for all available from initial read
+        returns:
+            list of all images pre-train/test of matching class and magnfication
+            list of all image names that match the criteria
+        '''
+        lst_filtered_imgs = []
+        lst_filtered_names = []
+        for k1, v1 in self.images_attributes.items():
+            if (v1['tumor_class'] == tumor_class):
+                if v1['mag' == magnification] or magnification is None :
+                    print ('getting filename {}'.format(k1))
+                    lst_filtered_names.append(k1)
+                    lst_filtered_imgs.append (self.get_image(k1))
 
-        #print ('tumor_class vector : {}'.format(self.tumor_class_vector [:20]))
-
-
-
+        return lst_filtered_imgs, lst_filtered_names
 
     def _parse_attributes(self):
         ''' 
@@ -540,7 +548,7 @@ class ImagePipeline(object):
             d_one = self._parse_filename(filename)
             d1[filename] = d_one[filename]
                 
-        # let's add original image sizes (assumes same dimensions)
+        # add image sizes
         # only do this the first time
         for i in np.arange(0, len(self.images_list)):
             fn = self.images_filename_list[i]
@@ -552,28 +560,43 @@ class ImagePipeline(object):
         #print (self.images_attributes)
 
 
-
     def vectorize(self):
         """
-        Return (feature matrix, the response) if output is True, otherwise set as instance variable.
+        sets feature matrix (X), otherwise set as instance variable.
         Run at the end of all transformations
         """
-        # these are all arrays
         self._vectorize_X()
         print ('features shape {}'.format( self.features.shape))
-        #self._vectorize_labels()
-        #print ('labels shape {}'.format( self.labels.shape))
-
         print ('attribs (dict) len {}'.format( len(self.images_attributes)))
-        self._vectorize_y()
+        self.tumor_class_vector = self._vectorize_y()
+
+    def double_the_benigns(self):
+        '''
+        Extracts the benign images in X and y and doubles them to even out the target y values.
+        This should be used with data augmentation so we hopefully don't get the same image twice very often
+        pseudo-bagging
+        returns:
+            the number of elements that were doubled
+        '''    
+        benign_filter_arr = self.tumor_class_vector == 0
+        print ('shapes {} {} {}'.format(self.tumor_class_vector.shape, benign_filter_arr.shape, self.features.shape))
+        y_to_append = self.tumor_class_vector[benign_filter_arr] 
+        X_to_append = self.features[benign_filter_arr, :, :, :]
+        print ('shapes X y to append {} {} '.format(X_to_append.shape, y_to_append.shape))
+        self.tumor_class_vector = np.concatenate((self.tumor_class_vector, y_to_append), axis = 0)
+        self.features = np.vstack((self.features, X_to_append))
+        print ('post append shapes {} {} {}'.format(self.tumor_class_vector.shape, benign_filter_arr.shape, self.features.shape))
+
+        return len(y_to_append)
+
 
     def get_image_index(self, filename):
         '''
-        Args:
-        filename without path
+        Arguments:
+            filename without path
+        returns 
+            int index to be used as an address for the images in self.images_list
         Used before calling transform()
-        returns int index to be used as an address for the images in self.images_list
-
         '''
  
         idx = self.images_filename_list.index(filename)    
@@ -581,52 +604,43 @@ class ImagePipeline(object):
 
         return idx
         
-    def get_one_of_each(self):
+    def get_one_of_each(self, tumor_class= None):
         '''
         For image analysis, let's have set of 8 slides to look at, one of each tumor type
-
-        returns list of images; one of each tumor_type (8 expected)
+        Arguments:
+            tumor_class(optional) = "B" or "M" to get 4 (one of each tumor_type)
+        returns 
+            list of images; one of each tumor_type (8 expected)
         '''
         img8_lst = []
         img_dict = {}
         # look through images_attributes for first instance of each tumor type
-        for i, ttype in enumerate (self.tumor_types):
+        if tumor_class == 'M':
+            req_tumor_types = self.malig_tumor_types
+        elif tumor_class == 'B':
+            req_tumor_types = self.benign_tumor_types
+        else:    
+            req_tumor_types = self.tumor_types
+          
+        for i, ttype in enumerate (req_tumor_types):
             print ('getting sample of type {}'.format(ttype))
             # list of a generator expression (which does same thing as a list comprehension, fancy!)
             found_keys = list(k for k, v in self.images_attributes.items() if ttype == v['tumor_type'])
-            #print ('found_keys {}'.format(found_keys))
             fn = found_keys[0]
-            # get first one's filename to test
-            #fn = 'SOB_M_PC-14-9146-40-001.png'
-
-            # find filename position in img_names()
-            #j = self.img_names[fn].index
-            #found_keys2 = list(j for j, lst in enumerate(self.images_filename_list) if fn in lst)
 
             idx = self.get_image_index(fn)
-            '''
-            outer_i = next(j for j, lst in enumerate(self.images_filename_list) if fn in lst)
-            print ('outer_i {} {}'.format(type(outer_i), outer_i))
-            if outer_i == None:
-                print ('**** There is a bug *****')
-            inner_i = self.images_filename_list[outer_i].index(fn)    
-            print ('found fn {} at nested index [{}] [{}]'.format(fn, outer_i, inner_i))
-            '''
             img = self.get_image(idx)
 
             img8_lst.append(img)
             img_dict[fn] = img
 
-        print('returning {} sample images in list shape {}'.format(len(img8_lst), img8_lst[0].shape))
-
-        # more clever?    
-        # img_dict2 =  dict(zip(self.tumor_types, img8_lst))
-        # print('is same? {}'.format(img_dict2))    
+        #print('returning {} sample images in list shape {}'.format(len(img8_lst), img8_lst[0].shape))
+   
         return img_dict
 
 if __name__ == '__main__':
 
-    # see if we can locate our .png files relative to here
+    # include this file in bc.py
     '''
     assumes folder structure like
     data

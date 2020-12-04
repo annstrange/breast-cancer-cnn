@@ -24,12 +24,12 @@ Year    Method Used         Validation Accuracy Range (in %)    Error Rate
 # Data Source
 I have utilized the BreakHis database, which has been accumulated from the result of a survey by P&D Lab, Brazil in 2014. Breast tissues are taken as samples by the procedure of surgical (open) biopsy (SOB). Samples are stained by hematoxylin and eosin (HE) and produced by a standard paraffin process in which specimen infiltration and embedment are done in paraffin. These histopathology images have a RGB (three channel) TrueColor (8 bits- Red, 8 bits- Green, 8 bits- Blue) color coding scheme. This database contains a total of 7909 images of 700x460 pixel resolution. Images are captured in four different magnification levels, 40X, 100X, 200X, and 400X.  As prior studies have acheived about 5% higher prediction results with the higher magnifications, highest with 200x, I'll focus on that particular dataset.    
 
-1(chart of data)
+![Chart of data](img/data.png)
 
 The data is classified as Benign or Malignant, and represents 4 different types of tumor in each classification.  
 
-!(sample of each)
-
+![Sample Benign](imgs/benign_sample1.png)
+![Sample Malignant](imgs/malignant_sample1.png)
 
 
 
@@ -44,10 +44,14 @@ Using Scikit skimage which is good for feature detection, filtering, contour mod
 
 Analyzed the following types of image pre-processing
 
-!(images here of convolved sample)
+* Chambolle Denoise
+![chambolle](imgs/chambolle.png)
+
+* H&E Dye separation (only parts dyed by Hematoxylin for nuclei) vs Eosin which stains the extracellular matrix and cytoplasm pink
+![hematoxylin](imgs/hematoxylin.png)
 
 Starting set of slides (one for each type of tumor)
-!(Initial images)
+![full color](imgs/color.png)
 
 - Choose greyscale or ID prominent colors?  There is significance between e.g. pink, blue, purple and brown because the HE dyes highlight
 < description here >
@@ -65,6 +69,26 @@ A study has shown that the human brain is sensitive to shapes, while computers a
 
 
 # Training / Testing
+
+How to find the best hyperparameters for the CNN?
+
+Initial selections and why
+* number of filters
+* dimensions of convolution layer
+* dimensions of pooling layer (reduces dimensions, reduces variance)
+
+
+![model](imgs/CNN-model.jpg)
+
+How to evaluate, 
+
+
+Use 5-fold Cross Validation to compare different hyperparameter selections.
+e.g.  Loop through:
+Optimizer learning rates: 0.01 through 0.00001 (1e-5)
+Activation functions
+epochs - for patterns, need slow learning, more epochs
+
 
 
 # Model Selection

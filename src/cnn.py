@@ -19,7 +19,7 @@ seed = 40
 # important inputs to the model: 
 batch_size = 50  # number of training samples used at a time to update the weights, was 5000
 nb_classes = 2 # 10    # number of output possibilities: [0 - 9] KEEP
-nb_epoch = 30       # number of passes through the entire train dataset before weights "final"
+nb_epoch = 10       # number of passes through the entire train dataset before weights "final"
 img_rows, img_cols = 153, 234  # 350, 230 #227, 227  #orign 700x460 # the size of the MNIST images was 28, 28
 #input_shape_color = (img_rows, img_cols, 3)   # 1 channel image input (color) 
 input_shape = (img_rows, img_cols)
@@ -94,7 +94,7 @@ class CNN(object):
         image_gen_train = preprocessing.image.ImageDataGenerator(rotation_range = 20, 
                 #featurewise_center=True,
                 rescale = 1./255,
-                featurewise_std_normalization=True,
+                #featurewise_std_normalization=True,
                 width_shift_range=0.2,
                 height_shift_range=0.2,
                 horizontal_flip=True, 
@@ -106,7 +106,7 @@ class CNN(object):
 
         image_gen_val = preprocessing.image.ImageDataGenerator(
                 rescale = 1./255,
-                featurewise_std_normalization=True
+                #featurewise_std_normalization=True
                 )
         image_gen_val.fit(self.X_test)
         self.val_datagen = image_gen_val.flow(self.X_test, self.y_test,
@@ -116,6 +116,19 @@ class CNN(object):
         # compute quantities required for featurewise normalization
         # (std, mean, and principal components if ZCA whitening is applied)
         #self.datagen.fit(self.X_train)
+
+    def get_image_gen(self, quantity=5):
+        '''
+        gets some data augmented samples from training data
+        Arguments:
+            quantity (optional) = how many images to return from self.datagen (based on training data)
+        Returns:
+            tuple(numpy array of images,  predicted value)   
+        '''
+
+        arr = self.datagen(5)
+        print (arr.shape)
+        return arr
 
     def load_and_featurize_data(self):
         # the data, shuffled and split between train and test sets
@@ -139,13 +152,7 @@ class CNN(object):
         # if augment option turned on
         self.data_augment()
 
-        # convert class vectors to binary class matrices (don't change)
 
-        #self.Y_train = to_categorical(self.y_train, nb_classes)  # cool
-        #self.Y_test = to_categorical(self.y_test, nb_classes)
-        # in Ipython you should compare Y_test to y_test
-        #return X_train, X_test, Y_train, Y_test
-        #print('y after one hot encoding {}'.format(self.Y_test.shape))
 
 
     def define_model(self, nb_filters, kernel_size, input_shape, pool_size):
@@ -154,7 +161,7 @@ class CNN(object):
         #input_shape_color = self.X_train.shape
         #L1
         model.add(Conv2D(nb_filters,
-                    (kernel_size[0], kernel_size[1]),  # ex. 3x3
+                    (kernel_size[0], kernel_size[1]),  # ex. 3x3 or 5x5
                     padding='same',  # other options incl 'valid'
                     activation = 'relu',
                     input_shape=input_shape))  # first conv. layer, expect input shape to be image shape e.g. 227x227x3?
@@ -187,11 +194,11 @@ class CNN(object):
 
         # now start a typical neural network
         # Layer 1
-        model.add(Dense(64, activation = 'relu'))  #         
+        model.add(Dense(64, activation = 'sigmoid'))  #         
         #model.add(Dropout(0.2))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # Layer 2
-        model.add(Dense(64, activation = 'relu'))  #         
+        model.add(Dense(64, activation = 'sigmoid'))  #         
         #model.add(Dropout(0.2))  # zeros out some fraction of inputs, helps prevent overfitting
 
         model.add(Dense(nb_classes, activation = 'softmax'))  # 10 final nodes (one for each class)  

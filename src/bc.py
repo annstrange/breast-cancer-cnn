@@ -66,7 +66,7 @@ from cnn import *
 # Careful: outside numpy we would say this is a LxW shape
 image_size = tuple((153, 234, 3))
 
-def read_images(root_dir): 
+def read_images(root_dir, sub_dirs= ['all']): 
 	'''
 	Input: None
 	Output: ImagePipline Object
@@ -75,7 +75,7 @@ def read_images(root_dir):
 	to attach them to our ImagePipeline object. 
 	'''
 	ip = ImagePipeline(root_dir)
-	ip.read((['200X']), brief_mode=False)  # only pick one mag at a time, us brief_mode for debugging
+	ip.read(sub_dirs, brief_mode=True)  # only pick one mag at a time, us brief_mode for debugging
 	return ip
 
 def test_sizes(ip, init=False):
@@ -272,7 +272,8 @@ if __name__ == '__main__':
 	# Todo: play around with this after we have a cost function
 	# starting size is 460 x 700 but sometimes 456 x 700
 
-	ip = read_images(root_dir)
+	ip = read_images(root_dir, ['200X'])
+	#ip = read_images(root_dir)  # for all by default, this is heavy
 	ip.resize(shape = image_size)
 
 	apply_premodel_transforms('rgb2gray')
@@ -280,11 +281,11 @@ if __name__ == '__main__':
 
 	# Turns data into arrays
 	ip.vectorize()
-	#ip.vectorize_y() 
+	ip.double_the_benigns()
 
 	# Useful
-	#img_dict = ip.get_one_of_each()
-	#plot_images(img_dict)
+	img_dict = ip.get_one_of_each('M')
+	plot_images(img_dict)
 	
 	# ok with color? if b&w
 	#gray_imgs = get_grayscale(img_dict)
@@ -309,41 +310,13 @@ if __name__ == '__main__':
 
 	
 	print('features shape: {} '.format(features.shape))
-    #print('target labels shape: {} and ex {}'.format(target.shape, target[:2]))
-
 	print('shapes of train test input {} {}'.format(features.shape, target.shape))
-	X_train, X_test, y_train, y_test = train_test_split(features, target, random_state=1)
-	#print('shapes of X_train, X_test, y_train, y_test {} {} {} {}'.format(X_train, X_test, y_train, y_test))
+	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .2, random_state=1)
 
-
-	#print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train[0,0], X_test[0,0], y_train[0], y_test[0]))
-
-
-	# Option B - Don't flatten so much, go w 4D numpy array all the way through
-	# Make sure train_test_split is ok
-	# Vectorize B
-
-
-	# Run through model
-	'''
-	params = {'n_estimators': [10, 100, 1000], 'max_depth': [8, 12, None]}
-	best_rf, best_params, best_score = fit_best_model(params)
-
-	print("\nBest estimator from the GridSearchCV:")
-	print(best_rf)
-	print("\nBest parameters from the grid search:")
-	print(best_params)
-	print("\nCross validated score of best estimator:")
-	print(best_score)
-	'''
-
-	#accuracy = fit_rand_forest (image_size)
-	#print ('accuracy of Rand Forest w no transforms {}'.format(accuracy))  
 
 	cnn = CNN()
-	# Have to get X data from bc.py, pass as numpy arrays
 
-	# Need y data one hot encoded, do we?  let's hit pause for now
+	# Need y data one hot encoded, do we?  actually no, only if using binary_classification
 	#y_train = cnn.one_hot_encode(y_train)
 	#y_test = cnn.one_hot_encode(y_test)
 
@@ -357,27 +330,16 @@ if __name__ == '__main__':
 	
 	cnn.fit_model( batch_size=batch_size, epochs=nb_epoch,
 				verbose=1, data_augmentation=True)
-	#cnn.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
-	#			verbose=1, validation_data=(X_test, y_test))
-
-	score = cnn.model.evaluate(X_test, y_test, verbose=0)
 
 
-
-	# predictions = model.predict(X_test)  # one-hot encoded
-	# predictions = model.predict_classes(X_test).reshape((-1, 1))  # deprecated
+	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
 	y_pred = cnn.model.predict(X_test)
 	print('predict results \n{}'.format(y_pred[:20]))
 
-	#rint('actual v predict\n{}'.format())
-
 	#Taking argmax will tell the winner of each by highest probability. 
-	predictions = np.argmax(cnn.model.predict(X_test), axis=-1).reshape((-1, 1))  # just right
-	# same as?
 	y_pred_1D = np.argmax(y_pred, axis=-1).reshape(-1, 1)
 
-	#predictions = cnn.predict()
 	print (classification_report(y_test, y_pred_1D)) 
 
 	print('Test scores:', score)

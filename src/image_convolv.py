@@ -23,8 +23,9 @@ cmap_eosin = LinearSegmentedColormap.from_list('mycmap', ['darkviolet',
 
 def plot_images(imgs, save_title='imgs.png', show = False, labels=None, Title='Sample Images'):
 	'''
-	Input: Dictionary of images, plotting options. 
-		Labels (if set) is a list of n titles to label the subplots
+	Arguments: 
+        imgs: Dictionary of images, plotting options. 
+		babels (optional) is a list of n titles to label the subplots
 	Output: Plot of 2, 4, or 8 images.  
 	'''
 	if len(imgs) == 2:
@@ -41,7 +42,7 @@ def plot_images(imgs, save_title='imgs.png', show = False, labels=None, Title='S
 	else:
 		labels = sorted(labels)	
 
-	# malarky for sorting; probably there's a better way
+	# stuff for sorting; probably there's a better way
 	lst_k = []
 	lst_v = []
 	for i, key in enumerate (sorted(imgs)):
@@ -62,7 +63,8 @@ def plot_images(imgs, save_title='imgs.png', show = False, labels=None, Title='S
 
 def get_grayscale(imgs, show_bool = False): 
 	'''
-	Input: Dictionary of images, plotting option. 
+	Arguments: 
+        imgs - Dictionary of images, plotting option. 
 	Output: Dictionary of images, plot of 8 images. 
 
 	Transform the colored images to greyscale, and plot them to make sure 
@@ -79,19 +81,18 @@ def get_grayscale(imgs, show_bool = False):
 
 def dye_color_separation (ihc_rgb):
     '''
-    Args:
-    ihc_rgb is a color image in a numpy array, 3D
+    Arguments:
+        ihc_rgb is a color image in a numpy array, 3D
     '''
-
     ihc_hed = rgb2hed(ihc_rgb)  
     return ihc_hed
 
 def dye_color_separation_dict (img_dict):
     '''
-    Args:
-    img_dict is a dictionary of images to dye color separate 
+    Arguments:
+        img_dict is a dictionary of images to dye color separate 
     returns 
-    img_dict of images separated into the primary dye colors for HE and DAG
+        img_dict of images separated into the primary dye colors for HE and DAG
     '''
     d = {}
     for k, v in img_dict.items():
@@ -168,9 +169,10 @@ def test_canny_sigma(imgs):
         plot_images(filtered_imgs, save_title=save_tit, show = True)
 
 def test_denoise(imgs, denoise = denoise_bilateral, 
-				 save_title = 'Hooplah.png', show_bool=False):
+				 save_title = 'denoise.png', show_bool=False):
     ''' 
-    Input: Dictionary of gray scaled images, denoise function, plotting options. 
+    Arguments:
+        imgs - Dictionary of gray scaled images, denoise function, plotting options. 
     Output: Plot of images with denoise applied. 
 
     Apply the denoise function to the gray-scaled, canny-filtered images and examine the plots
@@ -196,7 +198,7 @@ def test_denoise(imgs, denoise = denoise_bilateral,
                 filtered_img = canny(v, sigma=1)
                 denoised_imgs[k] = denoise(filtered_img, weight=x)
             if show_bool: 
-                print("Sigma, spatial: {}".format(x)) 
+                print("Chambolle weight: {}".format(x)) 
                 tit = 'Weight=' + str(x) + ':' + save_title
                 plt.suptitle(tit)
                 plot_images(denoised_imgs, save_title = tit, show = show_bool)
@@ -205,8 +207,10 @@ def test_denoise(imgs, denoise = denoise_bilateral,
 
 def apply_KMeans(color_imgs):
 	'''
-	Input: Dictionary of Color Images
-	Output: Clusters of colors per image. 
+	Arguments: 
+        color_imgs - Dictionary of Color Images
+	Returns: 
+        Clusters of colors per image. 
 
 	Fit KMeans to each class of images (here only 2) to get clusters of colors. 
 	'''
@@ -223,6 +227,7 @@ def apply_KMeans(color_imgs):
 	return clusters
 
 if __name__ == '__main__':
+    
     ihc_rgb = data.immunohistochemistry()  # sample from library
     ihc_hed = dye_color_separation(ihc_rgb)
     ax = plot_dye_separation(ihc_rgb, ihc_hed)
