@@ -33,6 +33,7 @@ Outputs:
 Results and graphs output to the Output folder
 
 '''
+brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -62,6 +63,7 @@ from sklearn.model_selection import GridSearchCV
 from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
+from bc_plotting import *
 
 # Careful: outside numpy we would say this is a LxW shape
 image_size = tuple((153, 234, 3))
@@ -75,7 +77,7 @@ def read_images(root_dir, sub_dirs= ['all']):
 	to attach them to our ImagePipeline object. 
 	'''
 	ip = ImagePipeline(root_dir)
-	ip.read(sub_dirs, brief_mode=True)  # only pick one mag at a time, us brief_mode for debugging
+	ip.read(sub_dirs, brief_mode=brief_mode)  # only pick one mag at a time, use brief_mode for debugging
 	return ip
 
 def test_sizes(ip, init=False):
@@ -116,8 +118,8 @@ def test_transforms(ip):
 	'''
 
     # instead of rgb2gray, find major colors
-	transformations = [sobel, canny, denoise_tv_chambolle, denoise_bilateral]
-	transform_labels = ['sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral']
+	transformations = [sobel, canny, denoise_tv_chambolle, denoise_bilateral, dye_color_separation]
+	transform_labels = ['sobel', 'canny', 'denoise_tv_chambolle', 'denoise_bilateral', 'dye_color_separation']
 	ip.resize(image_size)
 	for i, transformation in enumerate (transformations): 
 		ip.transform(transformation, {})
@@ -259,78 +261,63 @@ def apply_premodel_transforms(transformation):
 	elif transformation == sobel: 
 		ip.grayscale()
 		ip.transform(sobel, {})
-	elif transformation == denoise_bilateral:
-		ip.tv_denoise()
+	elif transformation == denoise_tv_chambolle:
+		ip.tv_denoise(weight=0.3)	
 	elif transformation == dye_color_separation:
 		ip.transform(dye_color_separation, {})
 	
-
-if __name__ == '__main__':
-	root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
+def run_pipeline():
+	'''
+	Performs steps to load files into ImagePipeline object
+	'''
+	#root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
 	root_dir = '../data/BreaKHis_v1/histology_slides/breast'
-
-	# Todo: play around with this after we have a cost function
-	# starting size is 460 x 700 but sometimes 456 x 700
 
 	ip = read_images(root_dir, ['200X'])
 	#ip = read_images(root_dir)  # for all by default, this is heavy
 	ip.resize(shape = image_size)
+	return ip
 
-	apply_premodel_transforms('rgb2gray')
-	#apply_premodel_transforms('denoise_bilateral')
+def perform_image_transforms(ip):
+	'''
+	Todo: These need evaluation: which is better.
+	'''
+	pass
+	# 1. No transforms - full color
 
-	# Turns data into arrays
-	ip.vectorize()
-	ip.double_the_benigns()
+	# 2. Grayscal denoise chambolle - these reduce the dimensions which the model needs to handle. 
+	#apply_premodel_transforms(rgb2gray)
+	#apply_premodel_transforms(denoise_tv_chambolle)
 
-	# Useful
-	img_dict = ip.get_one_of_each('M')
-	plot_images(img_dict)
-	
+	# Using only hematoxylin
+	#apply_premodel_transforms(dye_color_separation)
+
 	# ok with color? if b&w
 	#gray_imgs = get_grayscale(img_dict)
 	#sobel_imgs = apply_filter(gray_imgs, img_filter = sobel, save_title='sobel_imgs.png', show_bool = False)
 	#canny_imgs = apply_filter(gray_imgs, img_filter = canny, save_title='canny_imgs.png', show_bool = False)
 
-
 	# Image convolving
-	# do we want to exclude white areas completely?
 
 	# find clusters of similar colors
 	#centroids = apply_KMeans(img_dict)
 	# or ID the dye colors (s/be pretty similar results; we'll compare)
 	#dye_colors = dye_color_separation_dict(img_dict)
 
-
 	# Apply actual transformations to the feature set
 	#ip.transform(dye_color_separation, {})
-
-	features = ip.features
-	target = ip.tumor_class_vector
-
 	
-	print('features shape: {} '.format(features.shape))
-	print('shapes of train test input {} {}'.format(features.shape, target.shape))
-	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .2, random_state=1)
-
-
+def execute_model(X_train, X_test, y_train, y_test):
+	# The Model
 	cnn = CNN()
-
-	# Need y data one hot encoded, do we?  actually no, only if using binary_classification
-	#y_train = cnn.one_hot_encode(y_train)
-	#y_test = cnn.one_hot_encode(y_test)
-
-	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
 	cnn.fit(X_train, X_test, y_train, y_test)
 	cnn.load_and_featurize_data()
 
 	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
 
 	# during fit process watch train and test error simultaneously
-	
 	cnn.fit_model( batch_size=batch_size, epochs=nb_epoch,
 				verbose=1, data_augmentation=True)
-
 
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
@@ -344,3 +331,35 @@ if __name__ == '__main__':
 
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
+	return cnn
+
+if __name__ == '__main__':
+
+	ip = run_pipeline()
+	perform_image_transforms(ip)
+
+
+	# Turns data into arrays
+	ip.vectorize()
+	ip.double_the_benigns()  # Evens out the classes
+
+	# Useful for EDA
+	img_dict = ip.get_one_of_each('M')
+	#plot_images(img_dict)
+
+	features = ip.features
+	target = ip.tumor_class_vector
+
+	
+	print('features shape: {} '.format(features.shape))
+	print('shapes of train test input {} {}'.format(features.shape, target.shape))
+	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .2, random_state=1)
+
+
+	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
+
+	cnn = execute_model(X_train, X_test, y_train, y_test)
+
+	if (cnn.history is not None):
+		plot_training_results(history = cnn.history, epochs = 10)
+	

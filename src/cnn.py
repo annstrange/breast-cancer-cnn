@@ -238,12 +238,12 @@ class CNN(object):
 
     def compile_model (self, model):
 
-        optimizer_sgd = SGD(learning_rate=1e-4, momentum=0.0, nesterov=False, name='SGD')
-        optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam')
+        optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
+        optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
 
-        model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentroy / use one-hot labels
-                    optimizer=optimizer_sgd,  # adam 
-                    metrics=['accuracy'])  # we might prefer to use F1
+        model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
+                    optimizer='Adadelta',  # change here 
+                    metrics=['accuracy'])  # we might prefer to use F1, SparseCategoricalAccuracy
 
         print ('model \n {}'.format(model.summary() ))   
      

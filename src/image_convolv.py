@@ -79,10 +79,13 @@ def get_grayscale(imgs, show_bool = False):
 
 	return gray_imgs
 
-def dye_color_separation (ihc_rgb):
+def dye_color_separation (ihc_rgb, channel=None):
     '''
     Arguments:
         ihc_rgb is a color image in a numpy array, 3D
+        channel (optiona) If set to "H" or "E" returns only the hetatoxylin or eosin channel as greyscale, else, channel separated 3D
+    Returns:
+
     '''
     ihc_hed = rgb2hed(ihc_rgb)  
     return ihc_hed
@@ -99,22 +102,64 @@ def dye_color_separation_dict (img_dict):
         d[k] = rgb2hed(v)  
     return d    
 
+def get_dye_separation(img_dict, color="H"):
+    '''
+    Arguments:
+        ihc_rgb is a dictionary of color images
+        color = "H" (hematoxylin) or "E" Eosin
+    Returns:
+        dictionary of greyscale 2D images, separated by main dye colors into H or E component
+    rgb2hed is RGB to Haematoxylin-Eosin-DAB (HED) color space conversion.    
+    '''
+    d = {}
+    for k, v in img_dict.items():
+        if color=="H":
+            d[k] = rgb2hed(v)[:, :, 0]
+        else:
+            d[k] = rgb2hed(v)[:, :, 1]
+    return d    
+
+def get_he_separation(img_dict):
+    '''
+    Arguments:
+        ihc_rgb is a dictionary of color images
+        color = "H" (hematoxylin) or "E" Eosin
+    Returns:
+        dictionary of new 3D images, separated to only include H or E components
+    '''
+    d = {}
+    for k, v in img_dict.items():
+
+        h = rescale_intensity(ihc_hed[:, :, 0], out_range=(0, 1))
+        e = rescale_intensity(ihc_hed[:, :, 1], out_range=(0, 1))
+        zdh = np.dstack((np.zeros_like(h), e, h))         
+        d[k] = zdh
+    return d    
+
+
 def plot_dye_separation(ihc_rgb, ihc_hed):
+    '''
+    Arguments:
+        ihc_rgb is a dictionary of color images
+        ihc_hed has been dye separated by the main dye colors
+    Output:
+        a plot of the H&E components    
+    '''
     # accepts original image and the image that has been split to 3 dye types
-    fig, axes = plt.subplots(2, 2, figsize=(7, 6), sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, 1, figsize=(7, 6), sharex=True, sharey=True)
     ax = axes.ravel()
 
-    ax[0].imshow(ihc_rgb)
-    ax[0].set_title("Original image")
+    #ax[0].imshow(ihc_rgb)
+    #ax[0].set_title("Original image")
 
-    ax[1].imshow(ihc_hed[:, :, 0], cmap=cmap_hema)
-    ax[1].set_title("Hematoxylin")
+    ax[0].imshow(ihc_hed[:, :, 0], cmap=cmap_hema)
+    ax[0].set_title("Hematoxylin")
 
-    ax[2].imshow(ihc_hed[:, :, 1], cmap=cmap_eosin)
-    ax[2].set_title("Eosin")
+    ax[1].imshow(ihc_hed[:, :, 1], cmap=cmap_eosin)
+    ax[1].set_title("Eosin")
 
-    ax[3].imshow(ihc_hed[:, :, 2], cmap=cmap_dab)
-    ax[3].set_title("DAB")
+    #ax[3].imshow(ihc_hed[:, :, 2], cmap=cmap_dab)
+    #ax[3].set_title("DAB")
 
     for a in ax.ravel():
         a.axis('off')
@@ -124,10 +169,10 @@ def plot_dye_separation(ihc_rgb, ihc_hed):
 
 
 def rescale_dye_signals (ihc_hed, ax):
-    # Rescale hematoxylin and DAB signals and give them a fluorescence look
+    # Rescale hematoxylin and eosin signals and give them a fluorescence look
     h = rescale_intensity(ihc_hed[:, :, 0], out_range=(0, 1))
-    d = rescale_intensity(ihc_hed[:, :, 2], out_range=(0, 1))
-    zdh = np.dstack((np.zeros_like(h), d, h))
+    e = rescale_intensity(ihc_hed[:, :, 1], out_range=(0, 1))
+    zdh = np.dstack((np.zeros_like(h), e, h))
 
     fig = plt.figure()
     axis = plt.subplot(1, 1, 1, sharex=ax[0], sharey=ax[0])
