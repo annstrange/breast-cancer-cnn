@@ -224,30 +224,29 @@ class CNN(object):
             self.history = self.model.fit(self.datagen, 
                 epochs=nb_epoch, 
                 verbose=1,
-                #steps_per_epoch=500, # (len(self.X_train) / batch_size, nb_epoch),
-                # i think that if train data is a generator, validation data must be too
-                validation_data = self.val_datagen) 
+                validation_data = self.val_datagen)
+                # validation_steps = 3) # getting killed here
                 #max_queue_gen = 10 )   # default
-                #validation_steps = 300)
-
-                # fit_generator is deprectated, please use fit         
-                #self.history = self.model.fit_generator(self.datagen.flow(self.X_train, self.y_train, batch_size=batch_size) 
+                #steps_per_epoch=500, # (len(self.X_train) / batch_size, nb_epoch),
                 #steps_per_epoch= (len(self.X_train) / batch_size, nb_epoch))
   
                 
 
     def compile_model (self, model):
 
+        # options to try with tuning
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
 
         model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
-                    optimizer='Adadelta',  # change here 
-                    metrics=['accuracy'])  # we might prefer to use F1, SparseCategoricalAccuracy
+                    optimizer='Adadelta',  # adapts learning rates based on a moving window of gradient updates, ...
+                    # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
+                    metrics=['accuracy'])  # we might prefer to use F1, Precision, or SparseCategoricalAccuracy
 
         print ('model \n {}'.format(model.summary() ))   
      
         self.model = model
+
 
 if __name__ == '__main__':
 

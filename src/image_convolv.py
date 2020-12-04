@@ -22,44 +22,45 @@ cmap_eosin = LinearSegmentedColormap.from_list('mycmap', ['darkviolet',
 
 
 def plot_images(imgs, save_title='imgs.png', show = False, labels=None, Title='Sample Images'):
-	'''
-	Arguments: 
+    '''
+    Arguments: 
         imgs: Dictionary of images, plotting options. 
-		babels (optional) is a list of n titles to label the subplots
-	Output: Plot of 2, 4, or 8 images.  
-	'''
-	if len(imgs) == 2:
-		fig, axs = plt.subplots(1,2, figsize=(8, 8))
-	elif len(imgs) == 4:
-		fig, axs = plt.subplots(2,2, figsize=(8, 8))
-	elif len(imgs) == 8:
-		fig, axs = plt.subplots(4,2, figsize=(10, 10))
-	else:
-		raise ValueError("Plot function requires 2, 4, or 8 items. Passed in {} images".format(len(imgs)))
+        babels (optional) is a list of n titles to label the subplots
+    Output: Plot of 2, 4, or 8 images.  
+    '''
+    if len(imgs) == 2:
+        fig, axs = plt.subplots(1,2, figsize=(8, 8))
+    elif len(imgs) == 4:
+        fig, axs = plt.subplots(2,2, figsize=(8, 8))
+    elif len(imgs) == 8:
+        fig, axs = plt.subplots(4,2, figsize=(10, 10))
+    else:
+        raise ValueError("Plot function requires 2, 4, or 8 items. Passed in {} images".format(len(imgs)))
 
-	if labels == None:
-		labels = sorted(imgs.keys())
-	else:
-		labels = sorted(labels)	
+    if labels == None:
+        labels = sorted(imgs.keys())
+    else:
+        labels = sorted(labels)	
 
-	# stuff for sorting; probably there's a better way
-	lst_k = []
-	lst_v = []
-	for i, key in enumerate (sorted(imgs)):
-		lst_k.append(labels[i])
-		lst_v.append(imgs[key])
+    # stuff for sorting; probably there's a better way
+    lst_k = []
+    lst_v = []
+    for i, key in enumerate (sorted(imgs)):
+        lst_k.append(labels[i])
+        lst_v.append(imgs[key])
 
-	#for ax, k, v in zip(axs.flatten(), labels, sorted(imgs).values()): 
-	for ax, k, v in zip(axs.flatten(), lst_k, lst_v):
-		ax.imshow(v, cmap='gray')
-		ax.set_xticks([]); ax.set_yticks([])
-		ax.set_title('Image ' + k)
+    #for ax, k, v in zip(axs.flatten(), labels, sorted(imgs).values()): 
+    for ax, k, v in zip(axs.flatten(), lst_k, lst_v):
+        ax.grid(False)
+        ax.imshow(v, cmap='gray')
+        ax.set_xticks([]); ax.set_yticks([])
+        ax.set_title('Image ' + k)
 
-	fig.suptitle(Title)
-	fig.tight_layout()
-	fig.savefig(save_title, dpi = 200)
-	if show: 
-		plt.show()	
+    fig.suptitle(Title)
+    fig.tight_layout()
+    fig.savefig(save_title, dpi = 200)
+    if show: 
+        plt.show()	
 
 def get_grayscale(imgs, show_bool = False): 
 	'''

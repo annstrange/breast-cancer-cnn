@@ -360,6 +360,8 @@ if __name__ == '__main__':
 
 	cnn = execute_model(X_train, X_test, y_train, y_test)
 
+	cnn.model.save('../cnn.keras')
+
 	if (cnn.history is not None):
 		plot_training_results(history = cnn.history, epochs = 10)
 	

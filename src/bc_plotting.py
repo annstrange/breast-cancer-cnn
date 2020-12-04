@@ -38,3 +38,4 @@ def plot_training_results(history, epochs):
     plt.legend(loc='upper right')
     plt.title('Training and Validation Loss')
     plt.show()
+    fig.savefig('../history.png', dpi = 200)

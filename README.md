@@ -1,5 +1,4 @@
-# breast-cancer-cnn
-Breast Cancer biopsy image analysis using a Convolutional Neural Network (CNN)
+# Breast Cancer biopsy image analysis using a Convolutional Neural Network (CNN)
 
 # Objective
 Breast cancer tumor biopsy classification of benign or malignant remains a very manual and subjective process, done by specially trained pathologists.  Breast Cancer is the 2nd leading cause of cancer deaths globally, in women.  Advancing the fight against cancer requires early detection which could be aided by an efficient detection system. 
@@ -13,15 +12,15 @@ I have utilized the [BreakHis](https://web.inf.ufpr.br/vri/databases/breast-canc
 
 The data is classified as Benign or Malignant, and represents 4 different types of tumor in each classification.  
 
-![Sample Benign](imgs/benign_sample2.png) ![Sample Malignant](imgs/malignant_sample3.png)
+Benign
+![Sample Benign](imgs/benign_sample2.png) Malignant ![Sample Malignant](imgs/malignant_sample3.png)
 
-Benign  ............................................................................... Malignant
 
 
 # EDA 
 
 ## Feature Identification / Image Pre-processing
-A recent study has shown that the human brain is sensitive to shapes, while computers are more sensitive to patterns and texture [28]. Feature learning is entirely different for humans versus machine. In the visual context, malignant tumors tend to have large and irregular nuclei or multiple nuclear structures. The cytoplasm also undergoes changes, wherein new structures appear, or normal structures disappear. Malignant cells have a small cytoplasmic amount, frequently with vacuoles. In this scenario, the ratio of cytoplasm to nucleus decreases. We can use image pre-processing to help "bring forward" the features that may help identify malignant vs benign tumors, to amplify nuclei and cytoplasm and ignore unintersting features like fatty regions.
+In the visual context, malignant tumors tend to have large and irregular nuclei or multiple nuclear structures. The cytoplasm also undergoes changes, wherein new structures appear, or normal structures disappear. Malignant cells have a small cytoplasmic amount (either intensely colored or on the contrary, very pale), frequently with vacuoles. In this scenario, the ratio of cytoplasm to nucleus decreases. We can use image pre-processing to help "bring forward" the features that may help identify malignant vs benign tumors, to amplify nuclei and cytoplasm and ignore unintersting features like fatty regions.
 
 *Interesing pre-processing transformations*
 
@@ -31,17 +30,17 @@ Analyzed the following types of image pre-processing, we're looking for patterns
 
 ![chambolle](imgs/ChambolleDenoise0_3.png)  ![sobel](imgs/Sobel.png)
 
-* Best Color filter: Immunohistochemical staining colors separation: Hematoxylin and Eosin (H&E) Dye separation.  Hematoxylin for nuclei in blue vs Eosin which stains the extracellular matrix and cytoplasm pink, recombine and rescale.
+* Best Color filter: Immunohistochemical staining colors separation: Hematoxylin and Eosin (H&E) Dye separation.  Hematoxylin for nuclei in blue vs Eosin which stains the extracellular matrix and cytoplasm pink, recombine and rescale.  It appears color does help distinguish benign from malignant.
 
-![hematoxylin](imgs/hematoxylin.png) ![eosin](imgs/eosin.png)
+![hematoxylin](imgs/Hematoxylin.png) ![eosin](imgs/Eosin.png)
 
 These can be used as input in place of the full color images to see if any improvement in learning can be gained. 
 
-In the case of supervised learning, we do not need to provide these features explicitly. In this case images are fed to the CNN, along with each class as a label (Benign (B) or Malignant (M)). From the automatic update of filter values in the training process, CNN is able to extract the computational features. 
+In the case of supervised learning, we do not need to provide these features explicitly. In this case images are fed to the CNN, along with each class as a label (Benign (B) or Malignant (M)). From the automatic update of filter values in the training process, CNN should be able to extract the computational features. 
 
 # Training / Testing
 
-* 80/20 Train/Test split
+* 80/20 Train/Test split and 3-fold cross validation to ensure.
 
 ![preprocessing](imgs/Capstone2_preprocess.png)
 
