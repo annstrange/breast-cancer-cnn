@@ -20,7 +20,7 @@ seed = 40
 # important inputs to the model: 
 batch_size = 32  # number of training samples used at a time to update the weights, was 5000
 nb_classes = 2  # 10    # number of output possibilities: [0 - 9] KEEP
-nb_epoch = 10       # number of passes through the entire train dataset before weights "final"
+nb_epoch = 70       # number of passes through the entire train dataset before weights "final"
 img_rows, img_cols = 153, 234  # 350, 230 #227, 227  #orign 700x460 # the size of the MNIST images was 28, 28
 # input_shape_color = (img_rows, img_cols, 3)   # 1 channel image input (color) 
 input_shape = (img_rows, img_cols)
@@ -273,7 +273,7 @@ class CNN(object):
                                           #steps_per_epoch= (len(self.X_train) / batch_size)
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
-            print ('model fit size {}', format(self.model.y_train.shape))                              
+            #print ('model fit size {}', format(self.y_train.shape))                              
 
     def compile_model (self, model):
 
