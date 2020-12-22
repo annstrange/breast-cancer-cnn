@@ -45,6 +45,7 @@ from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.optimizers import SGD
 #from tensorflow.keras.datasets import mnist
 from tensorflow.keras.utils import to_categorical
+# flake8: noqa
 
 #from pipeline import 
 from skimage.filters import sobel 
@@ -316,7 +317,8 @@ def execute_model(X_train, X_test, y_train, y_test):
 	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
 
 	# during fit process watch train and test error simultaneously
-	cnn.fit_model( batch_size=batch_size, epochs=nb_epoch,
+	print ('About to call fit_model')
+	cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True)
 
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
@@ -361,7 +363,11 @@ if __name__ == '__main__':
 	cnn = execute_model(X_train, X_test, y_train, y_test)
 
 	cnn.model.save('../cnn.keras')
+	# or?
+	save_dir = os.path.join(os.getcwd(), 'saved_models')
+	model_name = 'keras_cifar10_trained_model.h5' # where to save model
+	# cnn.save_model(...)
 
 	if (cnn.history is not None):
-		plot_training_results(history = cnn.history, epochs = 10)
+		plot_training_results(history = cnn.history, epochs=3)
 	

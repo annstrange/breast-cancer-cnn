@@ -12,6 +12,7 @@ from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
 from skimage.transform import resize
 from sklearn.cluster import KMeans
 import pdb
+# flake8: noqa
 
 # Create an artificial color close to the original one
 cmap_hema = LinearSegmentedColormap.from_list('mycmap', ['white', 'navy'])

@@ -9,6 +9,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
 from skimage import color, transform, restoration, io, feature
+# flake8: noqa
 
 verbose = False
 

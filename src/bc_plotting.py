@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+# flake8: noqa
 
 plt.style.use('ggplot') # I also like fivethirtyeight'
 plt.rcParams.update({'font.size': 16, 'font.family': 'sans'})
