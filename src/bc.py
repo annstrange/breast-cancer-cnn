@@ -52,8 +52,8 @@ from tensorflow.keras.utils import to_categorical
 #from skimage.filters import sobel 
 #from skimage.feature._canny import canny
 #from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
-from skimage.color import rgb2gray
-from skimage.transform import resize
+#from skimage.color import rgb2gray
+#from skimage.transform import resize
 from skimage.io import imread
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
