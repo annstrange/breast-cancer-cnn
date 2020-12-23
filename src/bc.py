@@ -47,10 +47,11 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import to_categorical
 # flake8: noqa
 
-#from pipeline import 
+#from pipeline import
+# These might need a higher scikit-learn version than 0.13 which AWS has 
 #from skimage.filters import sobel 
-from skimage.feature._canny import canny
-from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
+#from skimage.feature._canny import canny
+#from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
 from skimage.color import rgb2gray
 from skimage.transform import resize
 from skimage.io import imread
