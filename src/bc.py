@@ -48,7 +48,7 @@ from tensorflow.keras.utils import to_categorical
 # flake8: noqa
 
 #from pipeline import 
-from skimage.filters import sobel 
+#from skimage.filters import sobel 
 from skimage.feature._canny import canny
 from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
 from skimage.color import rgb2gray
