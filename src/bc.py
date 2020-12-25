@@ -328,7 +328,7 @@ def execute_model(X_train, X_test, y_train, y_test):
 	# during fit process watch train and test error simultaneously
 	print ('About to call fit_model')
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
-				verbose=1, data_augmentation=True)
+				verbose=1, data_augmentation=True, brief_mode=brief_mode)
 
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
