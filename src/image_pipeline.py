@@ -39,7 +39,7 @@ class ImagePipeline(object):
         self.images_attributes = {}  # dictionary with known attributes by filename
 
         #dataset specifics
-        root_dir = '../BreaKHis_v1/histology_slides/breast'
+        #root_dir = '../BreaKHis_v1/histology_slides/breast'
         srcfiles = {'DC': '%s/malignant/SOB/ductal_carcinoma/%s/%sX/%s',
                 'LC': '%s/malignant/SOB/lobular_carcinoma/%s/%sX/%s',
                 'MC': '%s/malignant/SOB/mucinous_carcinoma/%s/%sX/%s',

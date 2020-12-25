@@ -33,7 +33,7 @@ Outputs:
 Results and graphs output to the Output folder
 
 '''
-brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,17 +43,17 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.optimizers import SGD
-#from tensorflow.keras.datasets import mnist
 from tensorflow.keras.utils import to_categorical
+
+import os
 # flake8: noqa
 
 #from pipeline import
-# These might need a higher scikit-learn version than 0.13 which AWS has 
-#from skimage.filters import sobel 
-#from skimage.feature._canny import canny
-#from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
-#from skimage.color import rgb2gray
-#from skimage.transform import resize
+from skimage.filters import sobel 
+from skimage.feature._canny import canny
+from skimage.restoration import denoise_bilateral, denoise_tv_chambolle
+from skimage.color import rgb2gray
+from skimage.transform import resize
 from skimage.io import imread
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -66,6 +66,15 @@ from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
 from bc_plotting import *
+from boto3_conn import *
+
+# Global variables
+nb_epoch = 10
+brief_mode = True  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
+#root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
+# Note: EC2 has different struct. ../data/BreaKHist_v1 ...
+root_dir = '../../../BreaKHis_v1/histology_slides/breast'
+#root_dir = '../BreaKHis_v1/histology_slides/breast'
 
 # Careful: outside numpy we would say this is a LxW shape
 image_size = tuple((153, 234, 3))
@@ -272,8 +281,7 @@ def run_pipeline():
 	'''
 	Performs steps to load files into ImagePipeline object
 	'''
-	#root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
-	root_dir = '../data/BreaKHis_v1/histology_slides/breast'
+
 
 	ip = read_images(root_dir, ['200X'])
 	#ip = read_images(root_dir)  # for all by default, this is heavy
@@ -337,6 +345,12 @@ def execute_model(X_train, X_test, y_train, y_test):
 	return cnn
 
 if __name__ == '__main__':
+
+	# Boto S3 connection test want annstrange-cnn-boto3 
+	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
+	#boto3_connection = get_s3('us-west-2')
+	#if boto3_connection:
+	#	print_s3_buckets_boto3(boto3_connection)
 
 	ip = run_pipeline()
 	perform_image_transforms(ip)

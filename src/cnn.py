@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, \
     Activation, Flatten
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import TensorBoard
 tf.compat.v1.disable_eager_execution()
 # flake8: noqa
 
@@ -20,7 +21,7 @@ seed = 40
 # important inputs to the model: 
 batch_size = 32  # number of training samples used at a time to update the weights, was 5000
 nb_classes = 2  # 10    # number of output possibilities: [0 - 9] KEEP
-nb_epoch = 70       # number of passes through the entire train dataset before weights "final"
+#nb_epoch = 10       # number of passes through the entire train dataset before weights "final"
 img_rows, img_cols = 153, 234  # 350, 230 #227, 227  #orign 700x460 # the size of the MNIST images was 28, 28
 # input_shape_color = (img_rows, img_cols, 3)   # 1 channel image input (color) 
 input_shape = (img_rows, img_cols)
@@ -83,6 +84,7 @@ class CNN(object):
         print('one_hot_encoded {}'.format(one_hot_encode[:5,:]))
 
         return one_hot_encode
+    
 
     def data_augment(self):
 
@@ -242,35 +244,44 @@ class CNN(object):
         # suggest limiting optimizers to one of these: 'adam', 'adadelta', 'sgd'
         self.compile_model(model)
 
-    def train_model(self, batch_size=batch_size, epochs=nb_epoch, verbose=1, data_augmentation=False ) :
+    def train_model(self, batch_size=32, epochs=10, verbose=1, data_augmentation=False, brief_mode=True ) :
         '''
+        Arguments:  note: all default values are super low to not train well but not runaway; really you should set them
+            batch_size int (32 is good)
+            epochs int recommend > 50
+            verbose int
+            data_augmentation bool recommend True for live use
+            brief_mode = True for small subset of training images, for debugging 
         This method lines up the model fit, either with X and y data, or with data augmentation added.
         Note: Standardization is handled outside this, in setting up self.X_train, y_train, X_test, and y_test
         
         '''
         print ('in fit_model, where we set up data aug which is set to {}'.format(data_augmentation))
 
+        tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True)
+
         if not data_augmentation:
             self.history = self.model.fit(self.X_train, self.y_train, 
                                           batch_size=batch_size, 
-                                          epochs=nb_epoch, 
+                                          epochs=epochs, 
                                           verbose=1,
                                           validation_data=(self.X_test, self.y_test)
                                           )
         else:
             print('Using datagen ')
+            multiplier = 1 if brief_mode else 10
             self.history = self.model.fit(self.datagen, 
-                                          epochs=nb_epoch, 
+                                          epochs=epochs, 
                                           verbose=1,
                                           validation_data=self.val_datagen,
                                           #validation_steps=3,
                                           # max_queue_gen = 10 )   # default
                                           # we want to send at least 10x1500 images in total
                                           # default was len(X_train) / batch_size
-                                          workers=4,
-                                          use_multiprocessing=True,
-                                          steps_per_epoch=(len(self.X_train) // batch_size) 
-                                          #steps_per_epoch= (len(self.X_train) / batch_size)
+                                          #workers=4,
+                                          #use_multiprocessing=True,
+                                          steps_per_epoch=(len(self.X_train) // batch_size) * multiplier,
+                                          callbacks=[tbCallBack]
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
