@@ -283,8 +283,8 @@ class CNN(object):
                                           # default was len(X_train) / batch_size
                                           #workers=4,
                                           #use_multiprocessing=True,
-                                          steps_per_epoch=(len(self.X_train) // batch_size) * multiplier,
-                                          callbacks=[tbCallBack]
+                                          steps_per_epoch=(len(self.X_train) // batch_size) * multiplier
+                                          #callbacks=[tbCallBack]
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
