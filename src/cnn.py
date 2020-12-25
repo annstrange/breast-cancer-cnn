@@ -269,7 +269,10 @@ class CNN(object):
                                           )
         else:
             print('Using datagen ')
-            multiplier = 1 if brief_mode else 10
+            if brief_mode:
+                multiplier = 1
+            else:
+                multiplier = 10    
             self.history = self.model.fit(self.datagen, 
                                           epochs=epochs, 
                                           verbose=1,
