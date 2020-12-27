@@ -272,7 +272,7 @@ class CNN(object):
             if brief_mode:
                 multiplier = 1
             else:
-                multiplier = 10    
+                multiplier = 5    
             self.history = self.model.fit(self.datagen, 
                                           epochs=epochs, 
                                           verbose=1,

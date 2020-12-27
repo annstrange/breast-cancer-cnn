@@ -69,7 +69,7 @@ from bc_plotting import *
 from boto3_conn import *
 
 # Global variables
-nb_epoch = 90
+nb_epoch = 10
 brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
 #root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
 # Note: EC2 has different struct. ../data/BreaKHist_v1 ...
