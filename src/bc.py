@@ -46,7 +46,9 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import to_categorical
 
 import os
-# flake8: noqa
+import subprocess
+import argparse
+##  --- flake8: noqa
 
 #from pipeline import
 from skimage.filters import sobel 
@@ -69,11 +71,12 @@ from bc_plotting import *
 from boto3_conn import *
 
 # Global variables
-nb_epoch = 10
+nb_epoch = 5
 brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
 #root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
 # Note: EC2 has different struct. ../data/BreaKHist_v1 ...
 root_dir = '../data/BreaKHis_v1/histology_slides/breast'
+data_multiplier = 1
 #root_dir = '../BreaKHis_v1/histology_slides/breast'
 
 # Careful: outside numpy we would say this is a LxW shape
@@ -328,8 +331,10 @@ def execute_model(X_train, X_test, y_train, y_test):
 	# during fit process watch train and test error simultaneously
 	print ('About to call fit_model')
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
-				verbose=1, data_augmentation=True, brief_mode=brief_mode)
+				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
+	cnn.save_model1('../', 'saved_model')
+	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
 	y_pred = cnn.model.predict(X_test)
@@ -346,11 +351,27 @@ def execute_model(X_train, X_test, y_train, y_test):
 
 if __name__ == '__main__':
 
+	parser = argparse.ArgumentParser()
+	'''
+	parser.add_argument("-num_workers", type=int, help="Number of workers to parse data, default =0)", default=0)
+	parser.add_argument("-batch_size", type=int, help="Number of batches during trainging/testing", default=20)
+	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=30)
+	parser.add_argument("-learning_rate", type=float, help="Learning rate during training", default=0.05) 
+	parser.add_argument("-embedding_dim", type=int, help="Embedding dimention for training", default=300)
+	parser.add_argument("-model_path", help="Path to save your model", default="/home/ec2-user/projects/models/")    
+	args = parser.parse_args()
+
+	main(args.num_workers, args.batch_size, args.n_epochs, args.learning_rate, args.embedding_dim, args.model_path)
+	'''
+
 	# Boto S3 connection test want annstrange-cnn-boto3 
 	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
 	#boto3_connection = get_s3('us-west-2')
 	#if boto3_connection:
 	#	print_s3_buckets_boto3(boto3_connection)
+
+    # Clear any tensorboard logs from previous runs
+	subprocess.call(["rm", "-rf", "../logs/"])
 
 	ip = run_pipeline()
 	perform_image_transforms(ip)
@@ -377,10 +398,10 @@ if __name__ == '__main__':
 
 	cnn = execute_model(X_train, X_test, y_train, y_test)
 
-	cnn.model.save('../cnn.keras')
+	#cnn.model.save('../cnn.keras')
 	# or?
-	save_dir = os.path.join(os.getcwd(), 'saved_models')
-	model_name = 'keras_cifar10_trained_model.h5' # where to save model
+	#save_dir = os.path.join(os.getcwd(), 'saved_models')
+	#model_name = 'keras_cifar10_trained_model.h5' # where to save model
 	# cnn.save_model(...)
 
 	if (cnn.history is not None):

@@ -1,11 +1,11 @@
 import tensorflow as tf
 import numpy as np
-import pickle 
+import pickle, os 
 from tensorflow import keras
 from tensorflow.keras import layers
 
 from tensorflow import keras
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, save_model
 from tensorflow.keras import layers  
 from tensorflow.keras import layers, preprocessing
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, \
@@ -14,7 +14,6 @@ from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import TensorBoard
 tf.compat.v1.disable_eager_execution()
-# flake8: noqa
 
 np.random.seed(40)  # for reproducibility
 seed = 40
@@ -244,7 +243,7 @@ class CNN(object):
         # suggest limiting optimizers to one of these: 'adam', 'adadelta', 'sgd'
         self.compile_model(model)
 
-    def train_model(self, batch_size=32, epochs=10, verbose=1, data_augmentation=False, brief_mode=True ) :
+    def train_model(self, batch_size=32, epochs=10, verbose=1, data_augmentation=False, data_multiplier=1 ) :
         '''
         Arguments:  note: all default values are super low to not train well but not runaway; really you should set them
             batch_size int (32 is good)
@@ -258,7 +257,9 @@ class CNN(object):
         '''
         print ('in fit_model, where we set up data aug which is set to {}'.format(data_augmentation))
 
-        tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True)
+
+        tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
+                                 update_freq='epoch')
 
         if not data_augmentation:
             self.history = self.model.fit(self.X_train, self.y_train, 
@@ -268,11 +269,7 @@ class CNN(object):
                                           validation_data=(self.X_test, self.y_test)
                                           )
         else:
-            print('Using datagen ')
-            if brief_mode:
-                multiplier = 1
-            else:
-                multiplier = 5    
+            print('Using datagen ') 
             self.history = self.model.fit(self.datagen, 
                                           epochs=epochs, 
                                           verbose=1,
@@ -283,8 +280,8 @@ class CNN(object):
                                           # default was len(X_train) / batch_size
                                           #workers=4,
                                           #use_multiprocessing=True,
-                                          steps_per_epoch=(len(self.X_train) // batch_size) * multiplier
-                                          #callbacks=[tbCallBack]
+                                          steps_per_epoch=(len(self.X_train) // batch_size) * data_multiplier,
+                                          callbacks=[tbCallBack]
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
@@ -304,14 +301,31 @@ class CNN(object):
      
         self.model = model
 
-    def save_model(model, save_dir, model_name):
+    def save_model1(self, save_dir, model_name):
         # Save model and weights
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
-        model_path = os.path.join(save_dir, model_name)
-        model.save(model_path)
+        # model_path = os.path.join(save_dir, model_name)
+        save_model(self, save_dir, overwrite=True, include_optimizer=True)
         print('Saved trained model at %s ' % model_path)    
 
+    def save_model(self, model_path, label, n_epochs, learning_rate):
+        '''
+        Arguments:
+            model_path string
+            label: string use for any differentiating labels on hyperparameters
+            n_epochs: int
+            learning_rate: float
+
+        '''
+        directory = os.path.dirname(model_path)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        model_name = "cnn_{}_epochs{}_lr{}".format(label, n_epochs, learning_rate)
+        if model_path[-1] != "/":
+            model_path = model_path + "/"
+        save_model(self, save_dir, overwrite=True, include_optimizer=True)
 
 if __name__ == '__main__':
 
