@@ -306,10 +306,10 @@ class CNN(object):
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         model_path = os.path.join(save_dir, model_name)
-        save_model(self, model_path, overwrite=True, include_optimizer=True)
+        tf.keras.model.save_model(self, model_path, overwrite=True, include_optimizer=True)
         print('Saved trained model at %s ' % model_path)    
 
-    def save_model(self, model_path, label, n_epochs, learning_rate):
+    def save_model2(self, model_path, label, n_epochs, learning_rate):
         '''
         Arguments:
             model_path string
