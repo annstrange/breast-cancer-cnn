@@ -43,7 +43,7 @@ def plot_training_results(history, epochs):
     plt.legend(loc='upper right')
     plt.title('Training and Validation Loss')
     plt.show()
-    fig.savefig('../history.png', dpi = 200)
+    fig.savefig('../imgs/history.png', dpi = 200)
 
 def my_roc_curve(probabilities, labels):
     '''
@@ -127,9 +127,12 @@ def plot_roc(X_test, y_test, model, plot_name):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic')
     plt.legend(loc="lower right")
-    plt.savefig('../figures/roc.plt', dpi=200)
+    plt.savefig('../imgs/roc.plt', dpi=200)
     plt.show()
 
 
 def roc_plot(ax, title, saveas):
+    '''
+    Generates ROC plot
+    '''
     pass    
