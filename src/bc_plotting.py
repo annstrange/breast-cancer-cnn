@@ -115,7 +115,7 @@ def plot_roc(X_test, y_test, model, plot_name):
     plt.plot(fpr, tpr, lw=1, label='ROC (area = %0.2f)' % (roc_auc))
 
     #mean_tpr /= n_splits
-    mean_tpr[-1] = 1.0
+    #mean_tpr[-1] = 1.0
     #mean_auc = auc(mean_fpr, mean_tpr)
     #plt.plot(mean_fpr, mean_tpr, 'k--',label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
     #plt.plot(fpr, tpr, 'k--',label='ROC (area = %0.2f)' % mean_auc, lw=2)

@@ -305,8 +305,8 @@ class CNN(object):
         # Save model and weights
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
-        # model_path = os.path.join(save_dir, model_name)
-        save_model(self, save_dir, overwrite=True, include_optimizer=True)
+        model_path = os.path.join(save_dir, model_name)
+        save_model(self, model_path, overwrite=True, include_optimizer=True)
         print('Saved trained model at %s ' % model_path)    
 
     def save_model(self, model_path, label, n_epochs, learning_rate):

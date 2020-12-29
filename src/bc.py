@@ -334,6 +334,8 @@ def execute_model(X_train, X_test, y_train, y_test):
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
 	cnn.save_model1('../', 'saved_model')
+
+	plot_roc(X_test, y_test, cnn, 'roc_plot_cnn1')
 	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
@@ -352,17 +354,21 @@ def execute_model(X_train, X_test, y_train, y_test):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=5)
+	parser.add_argument("-data_multiplier", type=int, help="How much to expand data augmentation", default=1)
 	'''
 	parser.add_argument("-num_workers", type=int, help="Number of workers to parse data, default =0)", default=0)
 	parser.add_argument("-batch_size", type=int, help="Number of batches during trainging/testing", default=20)
-	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=30)
 	parser.add_argument("-learning_rate", type=float, help="Learning rate during training", default=0.05) 
 	parser.add_argument("-embedding_dim", type=int, help="Embedding dimention for training", default=300)
 	parser.add_argument("-model_path", help="Path to save your model", default="/home/ec2-user/projects/models/")    
-	args = parser.parse_args()
+
 
 	main(args.num_workers, args.batch_size, args.n_epochs, args.learning_rate, args.embedding_dim, args.model_path)
 	'''
+	args = parser.parse_args()
+	nb_epoch = args.n_epochs
+	data_multiplier = args.data_multiplier
 
 	# Boto S3 connection test want annstrange-cnn-boto3 
 	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
