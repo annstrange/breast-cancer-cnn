@@ -336,7 +336,7 @@ def execute_model(X_train, X_test, y_train, y_test):
 	cnn.save_model1('../', 'saved_model')
 
 	plot_roc(X_test, y_test, cnn.model, 'roc_plot_cnn1')
-	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')
+	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')_
 	score = cnn.model.evaluate(X_test, y_test, verbose=1)
 
 	y_pred = cnn.model.predict(X_test)

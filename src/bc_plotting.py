@@ -127,7 +127,7 @@ def plot_roc(X_test, y_test, model, plot_name):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic')
     plt.legend(loc="lower right")
-    plt.savefig('../imgs/roc.plt', dpi=200)
+    plt.savefig('../imgs/roc.png', dpi=200)
     plt.show()
 
 
