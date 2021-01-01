@@ -86,6 +86,11 @@ class CNN(object):
     
 
     def data_augment(self):
+        '''
+        Arguments: 
+            is_save: whether to output augmented images for use by future comparison models
+            aug_dir: filepath
+        '''
 
         '''
         tf.keras.preprocessing.image.NumpyArrayIterator(
@@ -125,11 +130,14 @@ class CNN(object):
 
         '''
 
-        image_gen_train = preprocessing.image.ImageDataGenerator(rotation_range=20, 
+        image_gen_train = preprocessing.image.ImageDataGenerator(
+                                                                #preprocessing_function=preprocess_input,
+                                                                rotation_range=20, 
                                                                 #featurewise_center=True,
                                                                 #rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
+                                                                zca_whitening=True,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
@@ -145,6 +153,7 @@ class CNN(object):
         self.datagen = image_gen_train.flow(self.X_train, self.y_train)
 
         image_gen_val = preprocessing.image.ImageDataGenerator(
+                #preprocessing_function=preprocess_input
                 #rescale=1./255,
                 #lass_mode='binary'
                 # featurewise_std_normalization=True
@@ -170,6 +179,15 @@ class CNN(object):
         return arr
 
     def load_and_featurize_data(self):
+        '''
+        Arguments:
+            is_augment: whether we are using original source data and doing our own data augmentation
+            is_save: whether to save the generated data augmented images to aug_dir
+            aug_dir: if is_augment is true, this is the output dir to save.
+                if is_augment is false, this is the read dir 
+            The purpose of saving augmented data to disk is to enable future runs and model comparisons
+            to use identical data for training.
+        '''
         # the data, shuffled and split between train and test sets
         # (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
@@ -189,8 +207,8 @@ class CNN(object):
         print(self.X_train.shape[0], 'train samples')
         print(self.X_test.shape[0], 'test samples')
 
-        # if augment option turned on
         self.data_augment()
+
 
     def define_model(self, nb_filters, kernel_size, input_shape, pool_size):
         model = Sequential()  # model is a linear stack of layers 

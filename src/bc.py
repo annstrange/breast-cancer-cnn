@@ -68,7 +68,7 @@ from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
 from bc_plotting import *
-from boto3_conn import *
+#from boto3_conn import *
 
 # Global variables
 nb_epoch = 5
@@ -397,7 +397,7 @@ if __name__ == '__main__':
 	
 	print('features shape: {} '.format(features.shape))
 	print('shapes of train test input {} {}'.format(features.shape, target.shape))
-	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .2, random_state=1)
+	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .1, random_state=1)
 
 
 	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
@@ -411,5 +411,5 @@ if __name__ == '__main__':
 	# cnn.save_model(...)
 
 	if (cnn.model.history is not None):
-		plot_training_results(history = cnn.model.history, epochs=3)
+		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
 	
