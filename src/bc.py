@@ -493,14 +493,14 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 			score = cnn.model.evaluate(X_vl, y_vl, verbose=1)
 			print ('score from model.evaluate {}'.format(score))
 			temp[j] = score[1]  # [0.98, 0.62]  validation loss/accuracy
-			score_labeled = dict(zip(model.metrics_names, score))
+			score_labeled = dict(zip(cnn.model.metrics_names, score))
 			
 		scores[i] = temp.mean()
 	# which is the winner?	
 	print(scores)  # [0.73862012 0.68346339 0.67930818] would indicate Adam
 	
 	# establish mean accuracy, recall, precision	
-
+	print(score_labeled)
 
 def execute_model(cnn, X_train, X_test, y_train, y_test):
 	# This method assumes we've chosen our model and hyperparameters and are going for it.
