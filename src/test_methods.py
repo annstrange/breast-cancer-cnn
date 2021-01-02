@@ -34,7 +34,7 @@ def test_integrities(y, group, filenames, attribs):
         else:
             diagnosis = 0
         check_filename_v_y.append([y[i], diagnosis])
-        if (i < 5 or (len(group) - i) < 5):
+        #if (i < 5 or (len(group) - i) < 5):
             # print (filename, group[i], y[i], diagnosis)
 
     # are y and diagnosis always the same? sum a row-wise compare
