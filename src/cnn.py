@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import pickle, os 
+#import pillow as PIL
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -10,9 +11,11 @@ from tensorflow.keras import layers
 from tensorflow.keras import layers, preprocessing
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, \
     Activation, Flatten
-from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.optimizers import SGD, Adam, Adadelta
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import ModelCheckpoint
+
 tf.compat.v1.disable_eager_execution()
 
 np.random.seed(40)  # for reproducibility
@@ -280,6 +283,9 @@ class CNN(object):
         tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
                                  update_freq='epoch')
 
+        modelCheckPtCallback = ModelCheckpoint(filepath='../models/best_model.hdf5',
+                            save_best_only=True)
+
         if not data_augmentation:
             self.history = self.model.fit(self.X_train, self.y_train, 
                                           batch_size=batch_size, 
@@ -300,7 +306,7 @@ class CNN(object):
                                           #workers=4,
                                           #use_multiprocessing=True,
                                           steps_per_epoch=(len(self.X_train) // batch_size) * data_multiplier,
-                                          callbacks=[tbCallBack]
+                                          callbacks=[tbCallBack, modelCheckPtCallback]
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
@@ -308,9 +314,11 @@ class CNN(object):
     def compile_model (self, optimizer_name='SGD'):
 
         # options to try with tuning
+        # todo: add kwargs to this method 
+
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
-        # or Adadelta
+        # or Adadelta  defaults are learning_rate=0.001, rho=0.95, epsilon=1e-07, name='Adadelta'
 
         self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
                     optimizer=optimizer_name,  # adapts learning rates based on a moving window of gradient updates, ...
@@ -321,8 +329,9 @@ class CNN(object):
      
         #self.model = model
 
-    def save_model1(self, save_dir, model_name):
-        # Save model and weights
+
+    def save_model_new_format(self, save_dir, model_name):
+        # Save model and weights, in SavedModel format.  Not in used b/c having trouble re-loading
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
         model_path = os.path.join(save_dir, model_name)

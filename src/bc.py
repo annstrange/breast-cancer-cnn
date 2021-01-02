@@ -75,7 +75,7 @@ from test_methods import *
 
 # Global variables
 nb_epoch = 5
-brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
+#brief_mode = True  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
 #root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
 # Note: EC2 has different struct. ../data/BreaKHist_v1 ...
 root_dir = '../data/BreaKHis_v1/histology_slides/breast'
@@ -453,8 +453,9 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	scores = np.zeros(3)
 
 	# Set up some parameter tests here, ex. different learning rates? this could grow..  
-	params = ['Adam']
-	
+
+	params = ['Adadelta']
+
 	for i, k in enumerate(params):
 		print ('next parameter to cv {}'.format(k))	
 		#knn = KNeighborsClassifier(n_neighbors=k)
@@ -513,7 +514,7 @@ def execute_model(cnn, X_train, X_test, y_train, y_test):
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
-	cnn.save_model1('../', 'saved_model')
+	#cnn.save_model_new_format('../', 'saved_model')
 
 	plot_roc(X_test, y_test, cnn.model, 'roc_plot_cnn1')
 	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')_
@@ -536,6 +537,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=2)
 	parser.add_argument("-data_multiplier", type=int, help="How much to expand data augmentation", default=1)
+	parser.add_argument("-brief_mode", type=int, help="Set to true for basic compile check; min data", default=0)
 	'''
 	parser.add_argument("-num_workers", type=int, help="Number of workers to parse data, default =0)", default=0)
 	parser.add_argument("-batch_size", type=int, help="Number of batches during trainging/testing", default=20)
@@ -549,6 +551,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	nb_epoch = args.n_epochs
 	data_multiplier = args.data_multiplier
+	brief_mode = (args.brief_mode == 1)
 
 	# Boto S3 connection test want annstrange-cnn-boto3 
 	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
@@ -614,7 +617,7 @@ if __name__ == '__main__':
 	# expect to be sending in about 2371 records from 2636
 	run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
 
-	cnn.save_model1('../', 'saved_model_adam')
+	cnn.model.save('../models/saved_model.h5')
 	# With winning model(s), send validation data thru and get predict metrics
 	# todo: set acutall winning hypteparameters on the cnn 
 	# todo: can we just keep the winner from our evaluations? suspect 'best model' w be it.
