@@ -453,7 +453,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	scores = np.zeros(3)
 
 	# Set up some parameter tests here, ex. different learning rates? this could grow..  
-	params = ['SGD', 'Adadelta','Adam']
+	params = ['Adam']
 	
 	for i, k in enumerate(params):
 		print ('next parameter to cv {}'.format(k))	
@@ -492,11 +492,13 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 
 			score = cnn.model.evaluate(X_vl, y_vl, verbose=1)
 			print ('score from model.evaluate {}'.format(score))
-			temp[j] = score[1]  # [0.98, 0.62]  train/val overfit, which num to use, val?
+			temp[j] = score[1]  # [0.98, 0.62]  validation loss/accuracy
+			score_labeled = dict(zip(model.metrics_names, score))
 			
 		scores[i] = temp.mean()
 	# which is the winner?	
 	print(scores)  # [0.73862012 0.68346339 0.67930818] would indicate Adam
+	
 	# establish mean accuracy, recall, precision	
 
 
