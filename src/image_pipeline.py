@@ -9,6 +9,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
 from skimage import color, transform, restoration, io, feature
+from itertools import compress
 # flake8: noqa
 
 verbose = False
@@ -37,6 +38,7 @@ class ImagePipeline(object):
         #self.labels = None
         self.tumor_class_vector = None
         self.images_attributes = {}  # dictionary with known attributes by filename
+        self.group_list = []
 
         #dataset specifics
         #root_dir = '../BreaKHis_v1/histology_slides/breast'
@@ -93,6 +95,7 @@ class ImagePipeline(object):
         self.images_attributes = {}
         self.features = None
         self.tumor_class_vector = None
+        self.group_list = []
 
     @staticmethod
     def _accepted_file_format(fname):
@@ -501,20 +504,40 @@ class ImagePipeline(object):
         Return array of 1 or 0 for Malignant or Benign
         '''
 
-        arr = np.zeros(len(self.images_attributes), dtype = np.int32)
+        arr = np.zeros(len(self.images_filename_list), dtype = np.int32)
         i = 0
-        for k1, v1 in self.images_attributes.items():
+
+        for i, filename in enumerate(self.images_filename_list):
+
+            v1 = self.images_attributes[filename]
             if i < 4:
                 print (v1) 
             if (v1['tumor_class'] == "M"):
-                arr[i] = 1
-                i += 1        
+                arr[i] = 1    
 
         print ('tumor_class vector num malig {} out of {} samples'.format(np.sum(arr), len(arr)))
+        print ('tumor_class vector looks like {}'.format(arr))
+        self.tumor_class_vector = arr
 
-        return arr
 
+    def _get_patient_group_list (self):
+        ''' 
+        Assuming _parse_attributes has parsed the filenames for M (malignant) and B (benign), 
+        create a list to correspond to the y vector, with patient ids (slide_id)
 
+        Return list of patient ids
+        '''
+
+        slide_id_list = []
+        for filename in self.images_filename_list:
+
+            v1 = self.images_attributes[filename]
+            slide_id_list.append(v1['slide_id'])     
+
+        distinct_ids = set(slide_id_list)
+        print ('number of distinct patients: {}'.format(len(distinct_ids)))
+
+        return slide_id_list
 
     def get_images_of_class (self, tumor_class, magnification=None):
         '''
@@ -569,7 +592,8 @@ class ImagePipeline(object):
         self._vectorize_X()
         print ('features shape {}'.format( self.features.shape))
         print ('attribs (dict) len {}'.format( len(self.images_attributes)))
-        self.tumor_class_vector = self._vectorize_y()
+        self._vectorize_y()
+        self.group_list = self._get_patient_group_list()
 
     def double_the_benigns(self):
         '''
@@ -587,6 +611,14 @@ class ImagePipeline(object):
         self.tumor_class_vector = np.concatenate((self.tumor_class_vector, y_to_append), axis = 0)
         self.features = np.vstack((self.features, X_to_append))
         print ('post append shapes {} {} {}'.format(self.tumor_class_vector.shape, benign_filter_arr.shape, self.features.shape))
+
+        # also fix self.group_list and self.filenames
+
+        fn_to_append = compress(self.images_filename_list, benign_filter_arr) 
+        self.images_filename_list.extend(fn_to_append)
+
+        grp_to_append = compress(self.group_list, benign_filter_arr)
+        self.group_list.extend(grp_to_append)
 
         return len(y_to_append)
 

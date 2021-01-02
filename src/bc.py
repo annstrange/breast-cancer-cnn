@@ -34,7 +34,6 @@ Results and graphs output to the Output folder
 
 '''
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -44,6 +43,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import GroupKFold
+from random import random, shuffle
+from operator import itemgetter
 
 import os
 import subprocess
@@ -58,16 +60,17 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 from skimage.io import imread
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.metrics import accuracy_score, classification_report
 import numpy as np
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV  #?
 
 
 from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
 from bc_plotting import *
+from test_methods import *
 #from boto3_conn import *
 
 # Global variables
@@ -319,14 +322,189 @@ def perform_image_transforms(ip):
 
 	# Apply actual transformations to the feature set
 	#ip.transform(dye_color_separation, {})
+
+def _group_split_holdouts(features, labels, groups, holdout_pct):
+	'''
+	Arguments:
+		features: numpy array of images
+		labels: numpy array of labels e.g 1/0
+		groups: patient identifiers to keep groups together
+	Returns:
+		train_features,
+		train_labels,
+		train_groups,
+		train_filenames,
+		X_holdout,
+		y_holdout
+		[y_groups]: might be useful later, e.g. if 4 slides/5 for the same patient have same predict
+		[y_filenames]: ditto
+	'''
+	pass	
+
+
+def _groups_from_filenames(filenames, groups):
+	'''
+	Arguments:
+		filenames: list of filenames any length
+		attribs: full dictionary of attributes
+	returns:
+		list of len(filenames) with string slide-ids aka patient ids.
+	'''
+	groups = []
+
+
+	return groups	
+
+def _sort_list_by_index(list1, index):
+	'''
+	Arguments:
+		list is a list of items
+		index: numpy int array of same length as list, in a different order e.g. (2, 0, 1)
+	Returns:
+		list sorted in same way a numpy mask filter works	
+	'''
+	#zip_list = list(zip(list1, index))
+	#result = sorted(zip_list, key=itemgetter(1))
+	#sorted_list, i = zip(*result)
+
+	sorted_list = [list1[idx] for idx in index]
+
+	return sorted_list
+
+
+def shuffle_all(X, y, groups, filename_list):
+	'''
+	The cross validation functions aren't that shuffley, keep getting all the benigns up front in the training.
+	'''	
+	index = np.arange(len(filename_list))
+	np.random.shuffle(index)
+
+	X_shuffled = X[index]
+	y_shuffled = y[index]
+	groups_shuffled = _sort_list_by_index(groups, index)
+	fn_shuffled = _sort_list_by_index(filename_list,index)
+
+	return X_shuffled, y_shuffled, groups_shuffled, fn_shuffled
+
+
+def train_holdouts_split_by_group(X, y, groups, filename_list, holdout_pct=0.1):
+	'''
+	Because our biopsies have many samples from the same patient, we should group these images together for splitting
+	to avoid a leak (cheating)
+	Arguments:
+		X, y, attribs is data dictionary to get the patient id attribute for the groups. 
+		groups: list of slide_ids = distinct by patient
+		filenames: list, as the index to find slide attributes, this splits too
+	Return:
+		X_train, X_holdout, y_train, y_holdout, group_train, filename_train, ....
 	
-def execute_model(X_train, X_test, y_train, y_test):
-	# The Model
-	cnn = CNN()
+	'''
+
+	print ('in train_holdouts_split_by_group, shapes of X and y, groups, and fns {} {} {} {}'.format(X.shape, y.shape, len(groups), len(filename_list)))
+	print ('groups: {}'.format(groups[:50]))
+	#groups = np.arange(len(y))  
+	#print ('groups arange: {}'.format(groups[:100]))
+
+	# These are not random! 
+	train_indx, test_indx = next(
+			GroupShuffleSplit(random_state=0, test_size=holdout_pct).split(X, y, groups)
+	)	
+	X_train, X_hold, y_train, y_hold = \
+		    X[train_indx], X[test_indx], y[train_indx], y[test_indx]
+	print( X_train.shape, X_hold.shape)   # ((6,), (2,))
+	# print('unique groups {} {}'. format( np.unique(groups[train_indx]), np.unique(groups[test_indx])))  # (array([1, 2, 4]), array([3]))
+	# TypeError: only integer scalar arrays can be converted to a scalar index
+
+	# use same index on lists groups and filenames, watch: compress is not 0 based	
+	# groups_tr = list(compress(groups, [x+1 for x in train_indx]))  # this way is incorrect
+	groups_tr = _sort_list_by_index(groups, train_indx)
+	groups_hold = _sort_list_by_index(groups, test_indx )
+	filename_tr = _sort_list_by_index(filename_list, train_indx)
+	filename_hold = _sort_list_by_index(filename_list,test_indx)
+
+	print( len(groups_tr), len(groups_hold))   # ((6,), (2,))
+	print ('sample holdout filenames: {}'.format(filename_hold[:20]))  # all benign? test for balance.
+	print('What do train/hold return indexes look like train {} and holdout {}'.format(train_indx[:15], test_indx[:15]))
+
+	return X_train, X_hold, y_train, y_hold, groups_tr, groups_hold, filename_tr, filename_hold
+
+	
+def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
+	'''
+	Because our biopsies have many samples from the same patient, we should group these images together for splitting
+	to avoid a leak (cheating)
+	Arguments:
+		X, y, attribs is data dictionary to get the patient id attribute for the groups. 
+	Return:
+		? X_train, X_test, y_train, y_test ?
+	Repeats splits to get Train/test data, respecting keeping patient slides toghter (group feature), to test
+	different hyperparameters and do cross validation for measures.
+	Assumes holdout set is already removed.	
+	'''
+
+	#X = [0.1, 0.2, 2.2, 2.4, 2.3, 4.55, 5.8, 8.8, 9, 10]
+	#y = ["a", "b", "b", "b", "c", "c", "c", "d", "d", "d"]
+	print ('in Kfolds, shapes of X and y {} {}'.format(X_train.shape, y_train.shape))
+
+	#groups = np.arange(y_train.shape[0])   # temp override for debugging
+
+	gkf = GroupKFold(n_splits=folds)
+
+	scores = np.zeros(3)
+
+	# Set up some parameter tests here, ex. different learning rates? this could grow..  
+	params = ['SGD', 'Adadelta','Adam']
+	
+	for i, k in enumerate(params):
+		print ('next parameter to cv {}'.format(k))	
+		#knn = KNeighborsClassifier(n_neighbors=k)
+		temp = np.zeros(folds)
+		for j, (train_index, val_index) in enumerate(gkf.split(X_train, y_train, groups=groups)):
+			X_tr = X_train[train_index]
+			y_tr = y_train[train_index]
+			X_vl = X_train[val_index]
+			y_vl = y_train[val_index]
+			#print('What do GroupKFold return indexes look like train {} and test {}'.format(train_index[:5], val_index[:5]))
+			
+			# use same index on lists groups and filenames	
+			groups_tr = _sort_list_by_index(groups, train_index)
+			groups_val = _sort_list_by_index(groups, val_index)
+			filename_tr = _sort_list_by_index(filename_list, train_index)
+			filename_val = _sort_list_by_index(filename_list, val_index)
+
+			print( len(groups_tr), len(groups_val))   # ((6,), (2,))
+			#print ('validation filenames: {}'.format(filename_val))
+			
+			cnn.compile_model(optimizer_name=k)
+			cnn.fit(X_tr, X_vl, y_tr, y_vl)
+			cnn.load_and_featurize_data()
+	
+			# during fit process watch train and test error simultaneously
+			print ('About to call fit_model/start training')
+			cnn.train_model( batch_size=32, epochs=nb_epoch,
+				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
+
+			# accuracy = cnn.model.score(X_vl, y_vl)  # RF sytax
+			try:
+				plot_roc(X_vl, y_vl, cnn.model, 'roc_plot_cnn{}{}'.format(k, i))
+			except:
+				'Plot_roc failed'	
+
+			score = cnn.model.evaluate(X_vl, y_vl, verbose=1)
+			print ('score from model.evaluate {}'.format(score))
+			temp[j] = score[1]  # [0.98, 0.62]  train/val overfit, which num to use, val?
+			
+		scores[i] = temp.mean()
+	# which is the winner?	
+	print(scores)  # [0.73862012 0.68346339 0.67930818] would indicate Adam
+	# establish mean accuracy, recall, precision	
+
+
+def execute_model(cnn, X_train, X_test, y_train, y_test):
+	# This method assumes we've chosen our model and hyperparameters and are going for it.
+
 	cnn.fit(X_train, X_test, y_train, y_test)
 	cnn.load_and_featurize_data()
-
-	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
 
 	# during fit process watch train and test error simultaneously
 	print ('About to call fit_model')
@@ -354,7 +532,7 @@ def execute_model(X_train, X_test, y_train, y_test):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=5)
+	parser.add_argument("-n_epochs", type=int, help="Number of epochs for training", default=2)
 	parser.add_argument("-data_multiplier", type=int, help="How much to expand data augmentation", default=1)
 	'''
 	parser.add_argument("-num_workers", type=int, help="Number of workers to parse data, default =0)", default=0)
@@ -379,13 +557,21 @@ if __name__ == '__main__':
     # Clear any tensorboard logs from previous runs
 	subprocess.call(["rm", "-rf", "../logs/"])
 
-	ip = run_pipeline()
+	ip = run_pipeline() # sets ip images_filename_list, and images_list
 	perform_image_transforms(ip)
 
-
 	# Turns data into arrays
-	ip.vectorize()
-	ip.double_the_benigns()  # Evens out the classes
+	ip.vectorize() # sets ip features and tumor_class_vector
+
+	print('-------Checking starting list integ -------------------------')
+	test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
+	print('--------------------------------')
+
+	ip.double_the_benigns()  # Evens out the classes, stratify instead?
+
+	print('----------check after double----------------------')
+	num_diffs = test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
+	print('-----------after double, are {} diffs---------------------'.format(num_diffs))
 
 	# Useful for EDA
 	img_dict = ip.get_one_of_each('M')
@@ -394,22 +580,47 @@ if __name__ == '__main__':
 	features = ip.features
 	target = ip.tumor_class_vector
 
-	
-	print('features shape: {} '.format(features.shape))
-	print('shapes of train test input {} {}'.format(features.shape, target.shape))
-	X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = .1, random_state=1)
+	# shuffle! 
+	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
 
+	# check the validity of shuffle
+	print('----------check after shuffle----------------------')
+	num_diffs = test_integrities(y, groups, filename_list, ip.images_attributes)
+	print('-----------after shuffle, are {} diffs---------------------'.format(num_diffs))
 
-	print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
+	print ('shuffled!')
+	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
+	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_val, filename_tr, filename_val  = \
+			train_holdouts_split_by_group(X, y, \
+			groups=groups, filename_list=filename_list, holdout_pct=0.1)
 
-	cnn = execute_model(X_train, X_test, y_train, y_test)
+	print ('after train_holdouts_split')
 
-	#cnn.model.save('../cnn.keras')
-	# or?
-	#save_dir = os.path.join(os.getcwd(), 'saved_models')
-	#model_name = 'keras_cifar10_trained_model.h5' # where to save model
-	# cnn.save_model(...)
+	# check the validity of shuffle
+	print('--------------------------------')
+	num_diffs = test_integrities(y_train, groups_tr, filename_tr, ip.images_attributes)
+	print('-----------after train_holdouts_split, are {} diffs---------------------'.format(num_diffs))
+
+	# initialize model
+	cnn = CNN()
+	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
+
+	#cnn.fit(X_train, X_test, y_train, y_test)
+	#cnn.load_and_featurize_data()
+
+	# run/cross validation, how to we get model selection?  
+	# expect to be sending in about 2371 records from 2636
+	run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+
+	cnn.save_model1('../', 'saved_model_adam')
+	# With winning model(s), send validation data thru and get predict metrics
+	# todo: set acutall winning hypteparameters on the cnn 
+	# todo: can we just keep the winner from our evaluations? suspect 'best model' w be it.
+	#execute_model(cnn, X_train, X_holdout, y_train, y_holdout)	
+
 
 	if (cnn.model.history is not None):
 		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
+	else:
+		print ('finish without history')	
 	

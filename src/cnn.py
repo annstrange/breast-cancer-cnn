@@ -133,11 +133,11 @@ class CNN(object):
         image_gen_train = preprocessing.image.ImageDataGenerator(
                                                                 #preprocessing_function=preprocess_input,
                                                                 rotation_range=20, 
-                                                                #featurewise_center=True,
+                                                                #featurewise_center=False,
+                                                                #zca_whitening=True,
                                                                 #rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
-                                                                zca_whitening=True,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
@@ -148,7 +148,7 @@ class CNN(object):
         # This computes the internal data stats related to the data-dependent transformations, based on an array of sample data.
         # Only required if featurewise_center or featurewise_std_normalization or zca_whitening are set to True.
         # When rescale is set to a value, rescaling is applied to sample data before computing the internal data stats.
-        #image_gen_train.fit(self.X_train, augment=True, rounds=5)
+        image_gen_train.fit(self.X_train, augment=True, rounds=5)
 
         self.datagen = image_gen_train.flow(self.X_train, self.y_train)
 
@@ -198,8 +198,8 @@ class CNN(object):
         self.X_test = self.X_test.reshape(self.X_test.shape[0], img_rows, img_cols, 3)
 
         # convert and normalization
-        self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
-        self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
+        #self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
+        #self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
         #self.X_train /= 255  # normalizing (scaling from 0 to 1)
         #self.X_test /= 255   # normalizing (scaling from 0 to 1)
 
@@ -259,9 +259,10 @@ class CNN(object):
         # many optimizers available, see https://keras.io/optimizers/#usage-of-optimizers
         # tip loss at 'categorical_crossentropy' is good for a this multiclass problem,
         # suggest limiting optimizers to one of these: 'adam', 'adadelta', 'sgd'
-        self.compile_model(model)
 
-    def train_model(self, batch_size=32, epochs=10, verbose=1, data_augmentation=False, data_multiplier=1 ) :
+        self.model = model
+
+    def train_model(self, batch_size=32, epochs=10, verbose=1, data_augmentation=True, data_multiplier=1 ) :
         '''
         Arguments:  note: all default values are super low to not train well but not runaway; really you should set them
             batch_size int (32 is good)
@@ -304,20 +305,21 @@ class CNN(object):
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
 
-    def compile_model (self, model):
+    def compile_model (self, optimizer_name='SGD'):
 
         # options to try with tuning
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
+        # or Adadelta
 
-        model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
-                    optimizer='Adadelta',  # adapts learning rates based on a moving window of gradient updates, ...
+        self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
+                    optimizer=optimizer_name,  # adapts learning rates based on a moving window of gradient updates, ...
                     # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
-                    metrics=['accuracy'])  # we might prefer to use F1, Precision, or SparseCategoricalAccuracy
+                    metrics=['accuracy'])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
 
-        print ('model \n {}'.format(model.summary() ))   
+        print ('model \n {}'.format(self.model.summary() ))   
      
-        self.model = model
+        #self.model = model
 
     def save_model1(self, save_dir, model_name):
         # Save model and weights
