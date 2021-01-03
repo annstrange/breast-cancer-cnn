@@ -503,7 +503,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	# establish mean accuracy, recall, precision	
 	print(score_labeled)
 
-def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups, filename_list):
+def execute_model(cnn, X_train, X_holdout, y_train, y_holdout):
 	# This method assumes we've chosen our model and hyperparameters and are going for it.
 
 	scores = np.zeros(3)
@@ -519,16 +519,22 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups, filename_
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
-	#cnn.save_model_new_format('../', 'saved_model')
-	cnn.model.save('../models/saved_model_adadelta.h5')
+	cnn.model.save('../models/saved_model.h5')
+
+def evaluate_model(cnn, X_holdout, y_holdout):
+	'''
+	Arguments:
+		the model, and our holdout data
+	Run holdout data through predict to get metrics and generate ROC
+	'''	
+
+	score = cnn.model.evaluate(X_holdout, y_holdout, verbose=1)
+	print ('score from model.evaluate {}'.format(score))
 
 	try:
 		plot_roc(X_holdout, y_holdout, cnn.model, 'roc_plot_ada_cnn')
 	except:
 		'Plot_roc failed'	
-
-	score = cnn.model.evaluate(X_holdout, y_holdout, verbose=1)
-	print ('score from model.evaluate {}'.format(score))
 
 	y_pred = cnn.model.predict(X_holdout)
 	print('predict results \n{}'.format(y_pred[:20]))
@@ -540,7 +546,7 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups, filename_
 
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
-	return cnn
+
 
 if __name__ == '__main__':
 
@@ -605,7 +611,7 @@ if __name__ == '__main__':
 
 	print ('shuffled!')
 	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
-	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_val, filename_tr, filename_val  = \
+	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_hold, filename_tr, filename_hold  = \
 			train_holdouts_split_by_group(X, y, \
 			groups=groups, filename_list=filename_list, holdout_pct=0.1)
 
@@ -613,7 +619,7 @@ if __name__ == '__main__':
 
 	# check the validity of shuffle
 	print('--------------------------------')
-	num_diffs = test_integrities(y_train, groups_tr, filename_tr, ip.images_attributes)
+	num_diffs = test_integrities(y_holdout, groups_hold, filename_hold, ip.images_attributes)
 	print('-----------after train_holdouts_split, are {} diffs---------------------'.format(num_diffs))
 
 	# initialize model
@@ -627,16 +633,32 @@ if __name__ == '__main__':
 	# expect to be sending in about 2371 records from 2636
 	##################### KFOlds #############
 	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
-	execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
-	cnn.model.save('../models/saved_model.h5')
+	print ('train/test split for training!')
+	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
+	X_train, X_val, y_train, y_val, groups_tr, groups_val, filename_tr, filename_val  = \
+			train_holdouts_split_by_group(X_train, y_train, \
+			groups=groups_tr, filename_list=filename_tr, holdout_pct=0.2)
+
+	print('--------------------------------')
+	num_diffs = test_integrities(y_train, groups_tr, filename_tr, ip.images_attributes)
+	print('-----------after train_test_split, are {} diffs---------------------'.format(num_diffs))		
+
+	print ('after train_test_split')
+
+	execute_model(cnn, X_train, X_val, y_train, y_val)
+	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
+
+	evaluate_model(cnn, X_holdout, y_holdout)
+
+	#cnn.model.save('../models/saved_model.h5')
 	# With winning model(s), send validation data thru and get predict metrics
 	# todo: set acutall winning hypteparameters on the cnn 
 	# todo: can we just keep the winner from our evaluations? suspect 'best model' w be it.
 	#execute_model(cnn, X_train, X_holdout, y_train, y_holdout)	
 
 
-	if (cnn.model.history is not None):
+	if (cnn.history is not None):
 		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
 	else:
 		print ('finish without history')	

@@ -234,7 +234,7 @@ class CNN(object):
                         padding='valid'))  # 2nd conv. layer KEEP
 
         model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        # model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
+        model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # L3
         model.add(Conv2D(nb_filters * 4,
@@ -243,7 +243,7 @@ class CNN(object):
                         padding='valid'))  
 
         model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        # model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
+        model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
 
         model.add(Flatten())  # necessary to flatten before going into conventional dense layer  KEEP
         print('Model flattened out to ', model.output_shape)
