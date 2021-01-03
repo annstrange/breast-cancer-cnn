@@ -141,6 +141,7 @@ class CNN(object):
                                                                 #rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
+                                                                zoom_range=10,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
@@ -225,7 +226,7 @@ class CNN(object):
                     input_shape=input_shape))  # first conv. layer, expect input shape to be image shape e.g. 227x227x3?
 
         # model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        # model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
+        model.add(Dropout(0.2))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # l2
         model.add(Conv2D(nb_filters * 2,
@@ -234,7 +235,7 @@ class CNN(object):
                         padding='valid'))  # 2nd conv. layer KEEP
 
         model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
+        model.add(Dropout(0.1))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # L3
         model.add(Conv2D(nb_filters * 4,
@@ -243,7 +244,7 @@ class CNN(object):
                         padding='valid'))  
 
         model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        model.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
+        #cd srmodel.add(Dropout(0.05))  # zeros out some fraction of inputs, helps prevent overfitting
 
         model.add(Flatten())  # necessary to flatten before going into conventional dense layer  KEEP
         print('Model flattened out to ', model.output_shape)
@@ -318,10 +319,11 @@ class CNN(object):
 
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
+        optimizer_adadelta = Adadelta(earning_rate=0.0001, rho=0.95, epsilon=1e-07, name='Adadelta')
         # or Adadelta  defaults are learning_rate=0.001, rho=0.95, epsilon=1e-07, name='Adadelta'
 
         self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
-                    optimizer=optimizer_name,  # adapts learning rates based on a moving window of gradient updates, ...
+                    optimizer=optimizer_adadelta,  # adapts learning rates based on a moving window of gradient updates, ...
                     # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
                     metrics=['accuracy' ])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
 

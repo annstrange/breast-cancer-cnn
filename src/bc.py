@@ -455,6 +455,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	# Set up some parameter tests here, ex. different learning rates? this could grow..  
 
 	params = ['Adadelta']
+	lr_params = [0.001, 1e-04, 1e-05]
 
 	for i, k in enumerate(params):
 		print ('next parameter to cv {}'.format(k))	
