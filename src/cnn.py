@@ -319,7 +319,7 @@ class CNN(object):
 
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
-        optimizer_adadelta = Adadelta(earning_rate=0.0001, rho=0.95, epsilon=1e-07, name='Adadelta')
+        optimizer_adadelta = Adadelta(learning_rate=0.0001, rho=0.95, epsilon=1e-07, name='Adadelta')
         # or Adadelta  defaults are learning_rate=0.001, rho=0.95, epsilon=1e-07, name='Adadelta'
 
         self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
