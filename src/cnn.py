@@ -283,8 +283,8 @@ class CNN(object):
         tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
                                  update_freq='epoch')
 
-        modelCheckPtCallback = ModelCheckpoint(filepath='../models/best_model.hdf5',
-                            save_best_only=True)
+        #modelCheckPtCallback = ModelCheckpoint(filepath='../models/best_model.hdf5',
+        #                    save_best_only=True)
 
         if not data_augmentation:
             self.history = self.model.fit(self.X_train, self.y_train, 
@@ -306,7 +306,7 @@ class CNN(object):
                                           #workers=4,
                                           #use_multiprocessing=True,
                                           steps_per_epoch=(len(self.X_train) // batch_size) * data_multiplier,
-                                          callbacks=[tbCallBack, modelCheckPtCallback]
+                                          callbacks=[tbCallBack]   #modelCheckPtCallback
                                           )
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
@@ -323,7 +323,7 @@ class CNN(object):
         self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
                     optimizer=optimizer_name,  # adapts learning rates based on a moving window of gradient updates, ...
                     # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
-                    metrics=['accuracy'])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
+                    metrics=['accuracy' ])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
 
         print ('model \n {}'.format(self.model.summary() ))   
      

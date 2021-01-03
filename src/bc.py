@@ -85,7 +85,7 @@ data_multiplier = 1
 # Careful: outside numpy we would say this is a LxW shape
 image_size = tuple((153, 234, 3))
 
-def read_images(root_dir, sub_dirs= ['all']): 
+def read_images(root_dir, sub_dirs= ['all'], brief_mode=False): 
 	'''
 	Input: None
 	Output: ImagePipline Object
@@ -283,13 +283,13 @@ def apply_premodel_transforms(transformation):
 	elif transformation == dye_color_separation:
 		ip.transform(dye_color_separation, {})
 	
-def run_pipeline():
+def run_pipeline(brief_mode=False):
 	'''
 	Performs steps to load files into ImagePipeline object
 	'''
 
 
-	ip = read_images(root_dir, ['200X'])
+	ip = read_images(root_dir, ['200X'], brief_mode=brief_mode)
 	#ip = read_images(root_dir)  # for all by default, this is heavy
 	ip.resize(shape = image_size)
 	return ip
@@ -503,10 +503,15 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	# establish mean accuracy, recall, precision	
 	print(score_labeled)
 
-def execute_model(cnn, X_train, X_test, y_train, y_test):
+def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups, filename_list):
 	# This method assumes we've chosen our model and hyperparameters and are going for it.
 
-	cnn.fit(X_train, X_test, y_train, y_test)
+	scores = np.zeros(3)
+	# Set up winning parameter tests here, ex. different learning rates? this could grow..  
+	optimizer = 'Adadelta'
+
+	cnn.compile_model(optimizer_name=optimizer)
+	cnn.fit(X_train, X_holdout, y_train, y_holdout)
 	cnn.load_and_featurize_data()
 
 	# during fit process watch train and test error simultaneously
@@ -515,18 +520,23 @@ def execute_model(cnn, X_train, X_test, y_train, y_test):
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
 	#cnn.save_model_new_format('../', 'saved_model')
+	cnn.model.save('../models/saved_model_adadelta.h5')
 
-	plot_roc(X_test, y_test, cnn.model, 'roc_plot_cnn1')
-	# get later with loaded_cnn = tf.keras.models.load_model('../cnn_model')_
-	score = cnn.model.evaluate(X_test, y_test, verbose=1)
+	try:
+		plot_roc(X_holdout, y_holdout, cnn.model, 'roc_plot_ada_cnn')
+	except:
+		'Plot_roc failed'	
 
-	y_pred = cnn.model.predict(X_test)
+	score = cnn.model.evaluate(X_holdout, y_holdout, verbose=1)
+	print ('score from model.evaluate {}'.format(score))
+
+	y_pred = cnn.model.predict(X_holdout)
 	print('predict results \n{}'.format(y_pred[:20]))
 
 	#Taking argmax will tell the winner of each by highest probability. 
 	y_pred_1D = np.argmax(y_pred, axis=-1).reshape(-1, 1)
 
-	print (classification_report(y_test, y_pred_1D)) 
+	print (classification_report(y_holdout, y_pred_1D)) 
 
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
@@ -562,7 +572,7 @@ if __name__ == '__main__':
     # Clear any tensorboard logs from previous runs
 	subprocess.call(["rm", "-rf", "../logs/"])
 
-	ip = run_pipeline() # sets ip images_filename_list, and images_list
+	ip = run_pipeline(brief_mode=brief_mode) # sets ip images_filename_list, and images_list
 	perform_image_transforms(ip)
 
 	# Turns data into arrays
@@ -615,7 +625,9 @@ if __name__ == '__main__':
 
 	# run/cross validation, how to we get model selection?  
 	# expect to be sending in about 2371 records from 2636
-	run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+	##################### KFOlds #############
+	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+	execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
 	cnn.model.save('../models/saved_model.h5')
 	# With winning model(s), send validation data thru and get predict metrics
