@@ -309,7 +309,7 @@ class ClassificationNet(object):
 class TransferClassificationNet(ClassificationNet):
     """Image Classifier Implementing Transfer Methods"""
 
-    def fit(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout, model_fxn, optimizers, epochs, freeze_indices, warmup_epochs=5):
+    def fit(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout, model_fxn, optimizers, epochs, freeze_indices, warmup_epochs, data_multiplier):
         """
         Fits the CNN to the data, then saves and predicts on best model
 
