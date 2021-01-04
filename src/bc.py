@@ -595,7 +595,7 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, nb_e
 		print ('finish without history')	
     		
 
-def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size):
+def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size, data_multiplier):
 	'''
 	Run a transfer model from Xception
 	'''
@@ -604,7 +604,7 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 	simple_cnn = ClassificationNet('simple_class_test', target_size, 
 									preprocessing=preprocess_input, batch_size=batch_size)
-	simple_cnn.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn, opt, epochs)
+	simple_cnn.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn, opt, epochs, data_multiplier=data_multiplier=)
 
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
@@ -627,13 +627,7 @@ if __name__ == '__main__':
 	parser.add_argument("-data_multiplier", type=int, help="How much to expand data augmentation", default=1)
 	parser.add_argument("-brief_mode", type=int, help="Set to true for basic compile check; min data", default=0)
 	'''
-	parser.add_argument("-num_workers", type=int, help="Number of workers to parse data, default =0)", default=0)
-	parser.add_argument("-batch_size", type=int, help="Number of batches during trainging/testing", default=20)
-	parser.add_argument("-learning_rate", type=float, help="Learning rate during training", default=0.05) 
-	parser.add_argument("-embedding_dim", type=int, help="Embedding dimention for training", default=300)
-	parser.add_argument("-model_path", help="Path to save your model", default="/home/ec2-user/projects/models/")    
-
-
+  
 	main(args.num_workers, args.batch_size, args.n_epochs, args.learning_rate, args.embedding_dim, args.model_path)
 	'''
 	args = parser.parse_args()
@@ -674,4 +668,4 @@ if __name__ == '__main__':
 	epochs = 5
 	batch_size = 32
 
-	transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size)
+	transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size, data_multiplier)

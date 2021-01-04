@@ -92,14 +92,17 @@ class ClassificationNet(object):
             aug_dir: filepath
         '''
         image_gen_train = preprocessing.image.ImageDataGenerator(rotation_range=20, 
-                                                                zoom_range=10,
+                                                                #zoom_range=10,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
                                                                 vertical_flip=True,
                                                                 fill_mode='wrap')
-
-        image_gen_train.fit(self.X_train, augment=True, rounds=5)
+                                                            
+        image_gen_train.fit(self.X_train, 
+                            augment=True, 
+                            rounds=5
+                            )
 
         self.train_datagen = image_gen_train.flow(self.X_train, 
                                                   self.y_train, 
@@ -151,7 +154,7 @@ class ClassificationNet(object):
             shuffle=False)
         '''
 
-    def fit(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout, model_fxn, optimizer, epochs):
+    def fit(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout, model_fxn, optimizer, epochs, data_multiplier=1):
         """
         Fits the CNN to the data, then saves and predicts on best model
 
@@ -189,10 +192,10 @@ class ClassificationNet(object):
                                              # period=1) # deprecated
 
         history = model.fit(self.train_datagen,
-                                      steps_per_epoch=self.nTrain/self.batch_size,
+                                      steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=epochs,
                                       validation_data=self.validation_datagen,
-                                      validation_steps=self.nVal/self.batch_size,
+                                      validation_steps=self.nVal/self.batch_size ,
                                       callbacks=[mc, tensorboard])
 
         best_model = load_model(savename)
@@ -337,7 +340,8 @@ class TransferClassificationNet(ClassificationNet):
                                                   histogram_freq=0, 
                                                   batch_size=self.batch_size, 
                                                   write_graph=True, 
-                                                  embeddings_freq=0)
+                                                  embeddings_freq=0,
+                                                  update_freq='epoch')
 
         if not os.path.exists('models'):
             os.makedirs('models')
