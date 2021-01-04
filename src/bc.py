@@ -604,7 +604,7 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 	simple_cnn = ClassificationNet('simple_class_test', target_size, 
 									preprocessing=preprocess_input, batch_size=batch_size)
-	simple_cnn.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn, opt, epochs, data_multiplier=data_multiplier=)
+	simple_cnn.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn, opt, epochs, data_multiplier=data_multiplier)
 
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
