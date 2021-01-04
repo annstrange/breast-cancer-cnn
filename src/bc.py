@@ -611,6 +611,7 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
 	optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
+	optimizers = [Adadelta(lr=0.0006), Adadelta(lr=0.0001)]
 
 	warmup_epochs = 5
 	epochs = epochs - warmup_epochs
@@ -667,7 +668,7 @@ if __name__ == '__main__':
 	# New stuff -------------Transfer model
 
 	target_size = (153, 234)  # 299,299 is suggested for xception but is quite taxing on cpu
-	epochs = 5
+	#epochs = 5
 	batch_size = 32
 
 	transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
