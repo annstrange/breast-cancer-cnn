@@ -69,21 +69,23 @@ from sklearn.model_selection import GridSearchCV  #?
 from image_pipeline import ImagePipeline
 from image_convolv import * 
 from cnn import *
+from class_model_xfer import *
+from build_transfer_model import create_transfer_model
+from simple_cnn import create_model
 from bc_plotting import *
 from test_methods import *
 #from boto3_conn import *
 
 # Global variables
 nb_epoch = 5
-#brief_mode = True  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
-#root_dir = '../data/BreaKHis_v1/histology_slides/breast/benign/SOB/adenosis/SOB_B_A_14-22549AB'
-# Note: EC2 has different struct. ../data/BreaKHist_v1 ...
+# brief_mode = False  # use to take an even sub-sample for debugging; makes sure to hit all classes. 
 root_dir = '../data/BreaKHis_v1/histology_slides/breast'
 data_multiplier = 1
 #root_dir = '../BreaKHis_v1/histology_slides/breast'
 
-# Careful: outside numpy we would say this is a LxW shape
-image_size = tuple((153, 234, 3))
+#image_size = tuple((153, 234, 3))
+image_size = tuple((153, 234, 3))		#tuple((153, 234, 3))  # preserve aspect ratio
+
 
 def read_images(root_dir, sub_dirs= ['all'], brief_mode=False): 
 	'''
@@ -96,33 +98,6 @@ def read_images(root_dir, sub_dirs= ['all'], brief_mode=False):
 	ip = ImagePipeline(root_dir)
 	ip.read(sub_dirs, brief_mode=brief_mode)  # only pick one mag at a time, use brief_mode for debugging
 	return ip
-
-def test_sizes(ip, init=False):
-	'''
-	Input: ImagePipeline Object
-	Output: None
-
-	Run through a number of different sizes of pictures and pick which one fits best -
-	i.e. strikes a good compromise between the size and resolution of the image. 
-	''' 
-
-	if init: 
-		shapes = [(200, 200, 3), (200, 250, 3), (250, 300, 3), (300, 300, 3), (400, 400, 3)]
-	shapes = [(100, 100, 3), (150, 150, 3)]
-
-	for shape in shapes: 
-
-		ip.resize(shape=shape)
-		ip.show('40X', 0)
-		ip.show('40X', 3)
-		ip.show('40X', 6)
-		ip.show('40X', 9)
-
-	'''
-	I can still tell that the images are cats and dogs with 100 pixels, so I'm going to try 
-	starting with that and seeing how that turns out. I don't think it will end up well, 
-	but I'd like to try it. 
-	'''
 
 
 def test_transforms(ip): 
@@ -265,7 +240,7 @@ def img_transform(img):
 	Transform an image by reshaping it and also applying a grayscale to it. 
 	'''
 	img = resize(img, image_size)
-	img = rgb2gray(img)
+	#img = rgb2gray(img)
 	img = np.ravel(img)
 
 	return img
@@ -292,6 +267,7 @@ def run_pipeline(brief_mode=False):
 	ip = read_images(root_dir, ['200X'], brief_mode=brief_mode)
 	#ip = read_images(root_dir)  # for all by default, this is heavy
 	ip.resize(shape = image_size)
+	#ip.crop(shape=299)
 	return ip
 
 def perform_image_transforms(ip):
@@ -322,38 +298,7 @@ def perform_image_transforms(ip):
 
 	# Apply actual transformations to the feature set
 	#ip.transform(dye_color_separation, {})
-
-def _group_split_holdouts(features, labels, groups, holdout_pct):
-	'''
-	Arguments:
-		features: numpy array of images
-		labels: numpy array of labels e.g 1/0
-		groups: patient identifiers to keep groups together
-	Returns:
-		train_features,
-		train_labels,
-		train_groups,
-		train_filenames,
-		X_holdout,
-		y_holdout
-		[y_groups]: might be useful later, e.g. if 4 slides/5 for the same patient have same predict
-		[y_filenames]: ditto
-	'''
-	pass	
-
-
-def _groups_from_filenames(filenames, groups):
-	'''
-	Arguments:
-		filenames: list of filenames any length
-		attribs: full dictionary of attributes
-	returns:
-		list of len(filenames) with string slide-ids aka patient ids.
-	'''
-	groups = []
-
-
-	return groups	
+	
 
 def _sort_list_by_index(list1, index):
 	'''
@@ -405,7 +350,7 @@ def train_holdouts_split_by_group(X, y, groups, filename_list, holdout_pct=0.1):
 	#groups = np.arange(len(y))  
 	#print ('groups arange: {}'.format(groups[:100]))
 
-	# These are not random! 
+	# These are not looking very random
 	train_indx, test_indx = next(
 			GroupShuffleSplit(random_state=0, test_size=holdout_pct).split(X, y, groups)
 	)	
@@ -413,7 +358,6 @@ def train_holdouts_split_by_group(X, y, groups, filename_list, holdout_pct=0.1):
 		    X[train_indx], X[test_indx], y[train_indx], y[test_indx]
 	print( X_train.shape, X_hold.shape)   # ((6,), (2,))
 	# print('unique groups {} {}'. format( np.unique(groups[train_indx]), np.unique(groups[test_indx])))  # (array([1, 2, 4]), array([3]))
-	# TypeError: only integer scalar arrays can be converted to a scalar index
 
 	# use same index on lists groups and filenames, watch: compress is not 0 based	
 	# groups_tr = list(compress(groups, [x+1 for x in train_indx]))  # this way is incorrect
@@ -429,14 +373,15 @@ def train_holdouts_split_by_group(X, y, groups, filename_list, holdout_pct=0.1):
 	return X_train, X_hold, y_train, y_hold, groups_tr, groups_hold, filename_tr, filename_hold
 
 	
-def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
+def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
 	'''
 	Because our biopsies have many samples from the same patient, we should group these images together for splitting
 	to avoid a leak (cheating)
 	Arguments:
 		X, y, attribs is data dictionary to get the patient id attribute for the groups. 
 	Return:
-		? X_train, X_test, y_train, y_test ?
+		which one was best?
+
 	Repeats splits to get Train/test data, respecting keeping patient slides toghter (group feature), to test
 	different hyperparameters and do cross validation for measures.
 	Assumes holdout set is already removed.	
@@ -504,7 +449,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3):
 	# establish mean accuracy, recall, precision	
 	print(score_labeled)
 
-def execute_model(cnn, X_train, X_holdout, y_train, y_holdout):
+def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
 	# This method assumes we've chosen our model and hyperparameters and are going for it.
 
 	scores = np.zeros(3)
@@ -548,6 +493,132 @@ def evaluate_model(cnn, X_holdout, y_holdout):
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
 
+def load_data_pipeline(brief_mode=False):
+	'''
+	Perform the initial data loads/image pipeline
+	Args:
+		brief_mode loads minimum data for debugging
+	Returns:
+		image pipeline	
+	'''	
+	ip = run_pipeline(brief_mode=brief_mode) # sets ip images_filename_list, and images_list
+	perform_image_transforms(ip)
+
+	# Turns data into arrays
+	ip.vectorize() # sets ip features and tumor_class_vector
+
+	print('-------Checking starting list integ -------------------------')
+	test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
+	print('--------------------------------')
+
+	ip.double_the_benigns()  # Evens out the classes, stratify instead?
+
+	print('----------check after double----------------------')
+	num_diffs = test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
+	print('-----------after double, are {} diffs---------------------'.format(num_diffs))
+
+	return ip
+
+def image_train_val_hold_split(ip):
+	'''
+	Do the image splits once, for all models to execute (not for Kfolds)
+	'''	
+	# shuffle! Keep filename and attributes lists in same order
+	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
+
+	# check the validity of shuffle
+	print('----------check after shuffle----------------------')
+	num_diffs = test_integrities(y, groups, filename_list, ip.images_attributes)
+	print('-----------after shuffle, are {} diffs---------------------'.format(num_diffs))
+
+	print ('shuffled!')
+	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
+	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_hold, filename_tr, filename_hold  = \
+			train_holdouts_split_by_group(X, y, \
+			groups=groups, filename_list=filename_list, holdout_pct=0.1)
+
+	print ('after train_holdouts_split')
+
+	# check the validity of shuffle
+	print('--------------------------------')
+	num_diffs = test_integrities(y_holdout, groups_hold, filename_hold, ip.images_attributes)
+	print('-----------after train_holdouts_split, are {} diffs---------------------'.format(num_diffs))
+
+	################## For Directly Execute  ############
+	print ('train/test split for training!')
+	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
+	X_train, X_val, y_train, y_val, groups_tr, groups_val, filename_tr, filename_val  = \
+			train_holdouts_split_by_group(X_train, y_train, \
+			groups=groups_tr, filename_list=filename_tr, holdout_pct=0.2)
+
+	print('--------------------------------')
+	num_diffs = test_integrities(y_train, groups_tr, filename_tr, ip.images_attributes)
+	print('-----------after train_test_split, are {} diffs---------------------'.format(num_diffs))		
+
+	print ('after train_test_split')
+
+	return X_train, X_val, X_holdout, y_train, y_val, y_holdout, groups_tr, groups_val, groups_hold, filename_tr, filename_val, filename_hold
+
+
+def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
+	'''
+	Args:
+		ip has the image data read in and vectorized
+	Returns:
+		data split into Train/validation/holdout with corresponding filename and attribute lookups, 
+		respecting patient slide ids 	
+	'''
+
+	# initialize AlexNet-ish model
+	cnn = CNN()
+	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
+
+	##################### KFOlds #############
+	# for Kfolds, do not do second split
+	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+
+	execute_model(cnn, X_train, X_val, y_train, y_val)
+	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
+
+	evaluate_model(cnn, X_holdout, y_holdout)
+
+	#cnn.model.save('../models/saved_model.h5')
+	# With winning model(s), send validation data thru and get predict metrics
+	# todo: set acutal winning hypteparameters on the cnn 
+	# todo: can we just keep the winner from our evaluations? suspect 'best model' w be it.
+	#execute_model(cnn, X_train, X_holdout, y_train, y_holdout)	
+
+
+	if (cnn.history is not None):
+		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
+	else:
+		print ('finish without history')	
+    		
+
+def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size):
+	'''
+	Run a transfer model from Xception
+	'''
+	model_fxn = create_model
+	opt = RMSprop(lr=0.001)
+
+	simple_cnn = ClassificationNet('simple_class_test', target_size, 
+									preprocessing=preprocess_input, batch_size=batch_size)
+	simple_cnn.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn, opt, epochs)
+
+	model_fxn = create_transfer_model
+	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
+	optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
+
+	warmup_epochs = 5
+	epochs = epochs - warmup_epochs
+	transfer_model = TransferClassificationNet('transfer_test', target_size, 
+												preprocessing=preprocess_input, 
+												batch_size=batch_size)
+	transfer_model.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn,
+						optimizers, epochs, freeze_indices, warmup_epochs=warmup_epochs)
+
+	# transfer_model.evaluate
 
 if __name__ == '__main__':
 
@@ -569,6 +640,12 @@ if __name__ == '__main__':
 	nb_epoch = args.n_epochs
 	data_multiplier = args.data_multiplier
 	brief_mode = (args.brief_mode == 1)
+	image_size = tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3))
+	#cropped_size = tuple((299, 299, 3))
+
+	# Load image data
+	ip = load_data_pipeline(brief_mode)
+
 
 	# Boto S3 connection test want annstrange-cnn-boto3 
 	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
@@ -579,88 +656,22 @@ if __name__ == '__main__':
     # Clear any tensorboard logs from previous runs
 	subprocess.call(["rm", "-rf", "../logs/"])
 
-	ip = run_pipeline(brief_mode=brief_mode) # sets ip images_filename_list, and images_list
-	perform_image_transforms(ip)
-
-	# Turns data into arrays
-	ip.vectorize() # sets ip features and tumor_class_vector
-
-	print('-------Checking starting list integ -------------------------')
-	test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
-	print('--------------------------------')
-
-	ip.double_the_benigns()  # Evens out the classes, stratify instead?
-
-	print('----------check after double----------------------')
-	num_diffs = test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
-	print('-----------after double, are {} diffs---------------------'.format(num_diffs))
-
 	# Useful for EDA
-	img_dict = ip.get_one_of_each('M')
-	#plot_images(img_dict)
+	# img_dict = ip.get_one_of_each('M')
+	# plot_images(img_dict)
 
 	features = ip.features
 	target = ip.tumor_class_vector
 
-	# shuffle! 
-	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
+	X_train, X_val, X_holdout, y_train, y_val, y_holdout, groups_tr, groups_val, groups_hold, \
+		filename_tr, filename_val, filename_hold = image_train_val_hold_split(ip)
 
-	# check the validity of shuffle
-	print('----------check after shuffle----------------------')
-	num_diffs = test_integrities(y, groups, filename_list, ip.images_attributes)
-	print('-----------after shuffle, are {} diffs---------------------'.format(num_diffs))
+	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)
 
-	print ('shuffled!')
-	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
-	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_hold, filename_tr, filename_hold  = \
-			train_holdouts_split_by_group(X, y, \
-			groups=groups, filename_list=filename_list, holdout_pct=0.1)
+	# New stuff -------------Transfer model
 
-	print ('after train_holdouts_split')
+	target_size = (153, 234)  # 299,299 is suggested for xception but is quite taxing on cpu
+	epochs = 5
+	batch_size = 32
 
-	# check the validity of shuffle
-	print('--------------------------------')
-	num_diffs = test_integrities(y_holdout, groups_hold, filename_hold, ip.images_attributes)
-	print('-----------after train_holdouts_split, are {} diffs---------------------'.format(num_diffs))
-
-	# initialize model
-	cnn = CNN()
-	cnn.define_model(nb_filters, kernel_size, image_size, pool_size)
-
-	#cnn.fit(X_train, X_test, y_train, y_test)
-	#cnn.load_and_featurize_data()
-
-	# run/cross validation, how to we get model selection?  
-	# expect to be sending in about 2371 records from 2636
-	##################### KFOlds #############
-	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
-
-	print ('train/test split for training!')
-	# get train/test split while keeping slide-ids grouped together, to isolate holdouts
-	X_train, X_val, y_train, y_val, groups_tr, groups_val, filename_tr, filename_val  = \
-			train_holdouts_split_by_group(X_train, y_train, \
-			groups=groups_tr, filename_list=filename_tr, holdout_pct=0.2)
-
-	print('--------------------------------')
-	num_diffs = test_integrities(y_train, groups_tr, filename_tr, ip.images_attributes)
-	print('-----------after train_test_split, are {} diffs---------------------'.format(num_diffs))		
-
-	print ('after train_test_split')
-
-	execute_model(cnn, X_train, X_val, y_train, y_val)
-	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
-
-	evaluate_model(cnn, X_holdout, y_holdout)
-
-	#cnn.model.save('../models/saved_model.h5')
-	# With winning model(s), send validation data thru and get predict metrics
-	# todo: set acutall winning hypteparameters on the cnn 
-	# todo: can we just keep the winner from our evaluations? suspect 'best model' w be it.
-	#execute_model(cnn, X_train, X_holdout, y_train, y_holdout)	
-
-
-	if (cnn.history is not None):
-		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
-	else:
-		print ('finish without history')	
-	
+	transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size)

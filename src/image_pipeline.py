@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
-from skimage import color, transform, restoration, io, feature
+from skimage import color, transform, restoration, io, feature, util
 from itertools import compress
 # flake8: noqa
 
@@ -287,22 +287,6 @@ class ImagePipeline(object):
         plt.show()    
         return self.images_list[img_ind]
             
-    '''
-    def savefig(self, sub_dir, img_ind, file_attrib):
-        """
-        Save the nth image in the nth class
-        Arguments:
-            sub_dir: The name of the category
-            img_ind: The index of the category of images
-        """
-        print ('**** in savefig() *****')
-        sub_dir_ind = self.label_map[sub_dir]
-        io.imshow(self.images_list[sub_dir_ind][img_ind])
-        plt.show()
-        filename = sub_dir + str(img_ind) + '_' + file_attrib + '.png'
-        print(filename)
-        plt.savefig(filename)    
-    '''
 
     def transform_dict (self, func, params, img_dict):
         '''
@@ -417,27 +401,16 @@ class ImagePipeline(object):
         #    self.save(shape_str)
 
     '''
-    def _vectorize_features(self):
+    def crop(self, shape, img_ind=None):
         """
-        Take a list of images and vectorize all the images. Returns a feature matrix where each
-        row represents an image
-
-        Deprecated, because this needs same sized lists of images to work
+        Crop all images in self.images_list to a uniform shape
+        Arguments:
+            shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
         """
+        self.transform(crop, dict(width=shape))    
+    '''
 
-        print('images_list len {} should be 1 '.format(len(self.images_list) ), len(self.images_list[0]), len(self.images_list[1]))
 
-        for i in np.arange(0, len(self.images_list)):
-            #j = len(self.images_list[i])
-            print ('len of sub list {} {}'.format(i, len(self.images_list)))
-
-        # tupli-tizes each row in each sub list, sometimes of different lengths (ok)
-        row_tup = tuple(img_arr.ravel()[np.newaxis, :]
-                        for img_arr in self.images_list )
-        # r_ will mess up, however, if the image dimensions are not consistent with error
-        # ValueError: all the input array dimensions except for the concatenation axis must match exactly
-        self.features = np.r_[row_tup]
-    '''    
     def _vectorize_X(self):
         """
         Take a list of images and vectorize all the images. Returns a 3D feature matrix 

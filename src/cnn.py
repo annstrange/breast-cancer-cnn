@@ -7,7 +7,6 @@ from tensorflow.keras import layers
 
 from tensorflow import keras
 from tensorflow.keras.models import Sequential, save_model
-from tensorflow.keras import layers  
 from tensorflow.keras import layers, preprocessing
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, \
     Activation, Flatten
@@ -24,6 +23,7 @@ seed = 40
 batch_size = 32  # number of training samples used at a time to update the weights, was 5000
 nb_classes = 2  # 10    # number of output possibilities: [0 - 9] KEEP
 #nb_epoch = 10       # number of passes through the entire train dataset before weights "final"
+# what my model wants
 img_rows, img_cols = 153, 234  # 350, 230 #227, 227  #orign 700x460 # the size of the MNIST images was 28, 28
 # input_shape_color = (img_rows, img_cols, 3)   # 1 channel image input (color) 
 input_shape = (img_rows, img_cols)
@@ -63,29 +63,6 @@ class CNN(object):
         print ('How many train ben/malig {} out of total {}'.format(self.y_train.sum(axis=0), len(self.y_train)) )
         print ('How many test ben/malig {} out of total {}'.format(self.y_test.sum(axis=0), len(self.y_test)))
 
-
-    @staticmethod
-    def one_hot_encode(y):
-        # Categorical data to be converted to numeric data (can be 'B' and 'M' or 0 and 1)
-        outcomes = y
-
-        # Use the following code if y contains categories
-        # Universal list of colors
-        total_outcomes = [0, 1]
-
-        # map each color to an integer, 
-        mapping = {}
-        for x in range(len(total_outcomes)):
-            mapping[total_outcomes[x]] = x
-
-        # integer representation
-        for x in range(len(outcomes)):
-            outcomes[x] = mapping[outcomes[x]]
-
-        one_hot_encode = to_categorical(outcomes)
-        print('one_hot_encoded {}'.format(one_hot_encode[:5,:]))
-
-        return one_hot_encode
     
 
     def data_augment(self):
@@ -141,7 +118,7 @@ class CNN(object):
                                                                 #rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
-                                                                zoom_range=10,
+                                                                #zoom_range=10,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
@@ -154,17 +131,11 @@ class CNN(object):
         # When rescale is set to a value, rescaling is applied to sample data before computing the internal data stats.
         image_gen_train.fit(self.X_train, augment=True, rounds=5)
 
-        self.datagen = image_gen_train.flow(self.X_train, self.y_train)
+        self.datagen = image_gen_train.flow(self.X_train, self.y_train, shuffle=True)
 
-        image_gen_val = preprocessing.image.ImageDataGenerator(
-                #preprocessing_function=preprocess_input
-                #rescale=1./255,
-                #lass_mode='binary'
-                # featurewise_std_normalization=True
-                )
+        image_gen_val = preprocessing.image.ImageDataGenerator()
         #image_gen_val.fit(self.X_test)
-        self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, 
-                                              shuffle=True)
+        self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, shuffle=True)
         # compute quantities required for featurewise normalization
         # (std, mean, and principal components if ZCA whitening is applied)
         # self.datagen.fit(self.X_train)
@@ -312,18 +283,24 @@ class CNN(object):
             print ('After self.model.fit() using datagen and steps_per_epoch')                              
             #print ('model fit size {}', format(self.y_train.shape))                              
 
-    def compile_model (self, optimizer_name='SGD'):
+    def compile_model (self, optimizer_name='SGD', lr=None):
 
         # options to try with tuning
         # todo: add kwargs to this method 
 
         optimizer_sgd = SGD(learning_rate=1e-5, momentum=0.0, nesterov=False, name='SGD')  # default learning = 0.01
         optimizer_adam = Adam(learning_rate=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False, name='Adam') # 0.001
-        optimizer_adadelta = Adadelta(learning_rate=0.0001, rho=0.95, epsilon=1e-07, name='Adadelta')
+        optimizer_adadelta = Adadelta(learning_rate=lr, rho=0.95, epsilon=1e-07, name='Adadelta')  # if lr is None, will the default be used?
+
+        '''
+        loss_function = tf.keras.losses.CategoricalCrossentropy( \
+                        from_logits=True, label_smoothing=0, reduction=losses_utils.ReductionV2.AUTO,
+                        name='categorical_crossentropy')
+        '''                
         # or Adadelta  defaults are learning_rate=0.001, rho=0.95, epsilon=1e-07, name='Adadelta'
 
-        self.model.compile(loss='sparse_categorical_crossentropy',   # can also use sparse_categorical_crossentropy 
-                    optimizer=optimizer_adadelta,  # adapts learning rates based on a moving window of gradient updates, ...
+        self.model.compile(loss='sparse_categorical_crossentropy',   # 
+                    optimizer='Adadelta',  # adapts learning rates based on a moving window of gradient updates, ...
                     # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
                     metrics=['accuracy' ])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
 
