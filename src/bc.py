@@ -50,6 +50,7 @@ from operator import itemgetter
 import os
 import subprocess
 import argparse
+import pandas as pd
 ##  --- flake8: noqa
 
 #from pipeline import
@@ -635,9 +636,13 @@ def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
 		dataframe of the items with their attributes for plotting	
 	'''	
 
-	for i, fn in enumerate(filename_hold):
+	#for i, fn in enumerate(filename_hold):
     	
 
+	# convert df to pandas df
+	#df_attributes = pd.DataFrame.from_dict({(i): attribs[i]
+    #                       for i in attribs.keys() },
+    #                   orient='index')
 
 	df = pd.DataFrame(attribs)	
 
