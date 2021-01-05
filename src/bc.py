@@ -689,7 +689,7 @@ if __name__ == '__main__':
 		filename_tr, filename_val, filename_hold = image_train_val_hold_split(ip)
 
 	# build df of holdouts for plotting
-	df_hold = get_dataframe(X_holdout, y_holdout, groups_hold, filename_hold, ip.images_attributes)
+	#df_hold = get_dataframe(X_holdout, y_holdout, groups_hold, filename_hold, ip.images_attributes)
 
 	#################
 	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)
