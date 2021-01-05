@@ -137,6 +137,29 @@ class ImagePipeline(object):
         else:
             return True
 
+    def _crop(self, im4d, dims):
+        # Expects 3D (not 4D) numpy array (images)
+        # use basic numpy slice, dims is a tuple (w1, w2, h1, h2)
+        # where w values are the width start and end, h are heigh start and end positive integers
+        h1 = dims[0]
+        h2 = dims[1]
+        w1= dims[2]
+        w2 = dims[3]
+        im4d_2 = im4d[h1:h2, w1:w2, :]
+        return im4d_2
+
+    def center_square_crop(self, im4d):
+        # Crops to get the center square of a rectangular image
+        # note: only works for landscape shaped rectangle
+        # Automatically gets the biggest center square possible
+        h = im4d.shape[1]  # 460
+        w = im4d.shape[2]  # 700
+        w1 = (w - h) // 2
+        w2 = h + w1
+        #print ('want crop of dim {}:{}, {}:{}'.format(w1, w2, 0, h))
+        im4d_c = self._crop(im4d, tuple((w1, w2, 0, h)))
+        return im4d_c            
+
     def _assign_sub_dirs(self, sub_dirs=['all']):
         """
         Arguments: 
@@ -284,6 +307,7 @@ class ImagePipeline(object):
         """
 
         io.imshow(self.images_list[img_ind])  
+        plt.grid(b=None)
         plt.show()    
         return self.images_list[img_ind]
             
@@ -346,6 +370,7 @@ class ImagePipeline(object):
             img_arr = self.images_list[img_ind]
             img_arr = func(img_arr, **params).astype(float)
             io.imshow(img_arr)
+            plt.grid(b=None)
             plt.show()
         # Apply the function and parameters to all the images
         else:
@@ -399,25 +424,23 @@ class ImagePipeline(object):
         #if save:
         #    shape_str = '_'.join(map(str, shape))
         #    self.save(shape_str)
-
-    '''
-    def crop(self, shape, img_ind=None):
+    
+    def apply_square_crop(self, img_ind=None):
         """
-        Crop all images in self.images_list to a uniform shape
+        Apply the center crop function to all the images in self.images_list
         Arguments:
-            shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
+            img_ind: The index of the image within X
         """
-        self.transform(crop, dict(width=shape))    
-    '''
-
+        print ('In apply_square_crop being called from transform')
+        self.transform(self.center_square_crop, {}, img_ind=img_ind)
 
     def _vectorize_X(self):
         """
         Take a list of images and vectorize all the images. Returns a 3D feature matrix 
         """
-        print('images_list len {} '.format(len(self.images_list) ))
+        #print('images_list len {} '.format(len(self.images_list) ))
         to_array = np.array(self.images_list, dtype=np.float32)
-        print('shape of np array converted images_list going in {}'.format(to_array.shape))
+        #print('shape of np array converted images_list going in {}'.format(to_array.shape))
 
         self.features = to_array
 

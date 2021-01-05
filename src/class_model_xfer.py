@@ -10,6 +10,7 @@ import pandas as pd
 from tensorflow.keras.applications.xception import preprocess_input
 from tensorflow.keras import layers, preprocessing
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout
 from tensorflow.keras.optimizers import SGD, RMSprop, Adadelta
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.preprocessing import LabelBinarizer
@@ -58,7 +59,6 @@ class ClassificationNet(object):
         self.y_test = None
         self.X_holdout = None
         self.y_holdout = None
-        self.model = None
 
     def _init_data(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout):
         """
@@ -187,8 +187,8 @@ class ClassificationNet(object):
         savename = 'models/'+self.project_name+'.hdf5'
         mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
                                              verbose=0, save_best_only=True, 
-                                             save_weights_only=False, mode='auto'
-        )
+                                             save_weights_only=False, mode='auto',
+                                             save_freq = 'epoch')
                                              # period=1) # deprecated
 
         history = model.fit(self.train_datagen,
@@ -199,8 +199,7 @@ class ClassificationNet(object):
                                       callbacks=[mc, tensorboard])
 
         best_model = load_model(savename)
-
-
+        self.model = best_model
         print('evaluating simple model')
         accuracy = self.evaluate_model(best_model)
 
@@ -218,11 +217,17 @@ class ClassificationNet(object):
             list(float): metrics returned by the model, typically [loss, accuracy]
             """
 
+        # assume model is set
+        if self.model is None:
+            print ('failure: no model is set')
+
         if X_holdout is not None:
             self.X_holdout = X_holdout    
         if y_holdout is not None:
             self.y_holdout = y_holdout  
             self.nHoldout = len(y_holdout)  
+
+        print ('shapes in evaluate_model X {} y {}'.format(self.X_holdout.shape, self.y_holdout.shape))    
 
         image_gen_holdout = preprocessing.image.ImageDataGenerator( )
 
@@ -332,6 +337,7 @@ class TransferClassificationNet(ClassificationNet):
         model = model_fxn(self.input_size, self.n_categories)
         self.change_trainable_layers(model, freeze_indices[0])
 
+
         model.compile(optimizer=optimizers[0],
                       loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
@@ -351,7 +357,8 @@ class TransferClassificationNet(ClassificationNet):
         mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
                                              verbose=0, save_best_only=True, 
                                              save_weights_only=False, mode='auto',
-                                             period=1)
+                                             save_freq = 'epoch')
+                                             #period=1)
 
         history = model.fit(self.train_datagen,
                                       steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
@@ -370,7 +377,8 @@ class TransferClassificationNet(ClassificationNet):
                                       validation_steps=self.nVal/self.batch_size,
                                       callbacks=[mc, tensorboard])
         best_model = load_model(savename)
-        print('evaluating simple model')
+        self.model = best_model
+        print('evaluating transferred best model')
         accuracy = self.evaluate_model(best_model)
         return savename
 

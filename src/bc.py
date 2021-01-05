@@ -85,7 +85,7 @@ data_multiplier = 1
 #root_dir = '../BreaKHis_v1/histology_slides/breast'
 
 #image_size = tuple((153, 234, 3))
-image_size = tuple((153, 234, 3))		#tuple((153, 234, 3))  # preserve aspect ratio
+image_size = tuple((299, 299, 3))		#tuple((153, 234, 3))  # preserve aspect ratio
 
 
 def read_images(root_dir, sub_dirs= ['all'], brief_mode=False): 
@@ -267,8 +267,8 @@ def run_pipeline(brief_mode=False):
 
 	ip = read_images(root_dir, ['200X'], brief_mode=brief_mode)
 	#ip = read_images(root_dir)  # for all by default, this is heavy
+	ip.apply_square_crop()
 	ip.resize(shape = image_size)
-	#ip.crop(shape=299)
 	return ip
 
 def perform_image_transforms(ip):
@@ -468,22 +468,27 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch=nb_epoch
 
 	cnn.model.save('../models/saved_model.h5')
 
-def evaluate_model(cnn, X_holdout, y_holdout):
+def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''
 	Arguments:
 		the model, and our holdout data
+		df_hold has dataframe of existing attributes
+	Return:
+		dataframe of full holdout results	
 	Run holdout data through predict to get metrics and generate ROC
 	'''	
 
-	score = cnn.model.evaluate(X_holdout, y_holdout, verbose=1)
+	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
 	print ('score from model.evaluate {}'.format(score))
 
 	try:
-		plot_roc(X_holdout, y_holdout, cnn.model, 'roc_plot_ada_cnn')
+		modelname = modelx.project_name
+		print ('roc_plot_' + modelx.project_name)
+		plot_roc(X_holdout, y_holdout, modelx.model, 'roc_plot_' + modelx.project_name)
 	except:
 		'Plot_roc failed'	
 
-	y_pred = cnn.model.predict(X_holdout)
+	y_pred = modelx.model.predict(X_holdout)
 	print('predict results \n{}'.format(y_pred[:20]))
 
 	#Taking argmax will tell the winner of each by highest probability. 
@@ -493,6 +498,12 @@ def evaluate_model(cnn, X_holdout, y_holdout):
 
 	print('Test scores:', score)
 	print('Test accuracy:', score[1])  # this is the one we care about
+
+	# get results
+	df_prob = get_dataframe_w_predict(df_hold, y_pred)
+	print('got df_prob {}'.format(df_prob.iloc[0]))
+
+	return df_prob
 
 def load_data_pipeline(brief_mode=False):
 	'''
@@ -611,8 +622,8 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
-	optimizers = [Adam(lr=0.0006), Adam(lr=0.0001)] # [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
-	optimizers = [Adam(lr=0.0006), Adam(lr=0.0001)]
+	optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
+	optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)]
 
 	warmup_epochs = 5
 	epochs = epochs - warmup_epochs
@@ -622,7 +633,11 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	transfer_model.fit(X_train, X_val, X_holdout, y_train, y_val, y_holdout, model_fxn,
 						optimizers, epochs, freeze_indices, warmup_epochs=warmup_epochs, data_multiplier=data_multiplier)
 
-	# transfer_model.evaluate
+
+	# evaluate_model(transfer_model, X_holdout, y_holdout)
+	transfer_model.evaluate_model(transfer_model.model, X_holdout, y_holdout)
+
+	return transfer_model
 
 def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
 	'''
@@ -631,13 +646,14 @@ def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
 		y_pred: numpy array of prediction probabilities by class (top 3 if multiclass)
 		groups_hold: list of slide-ids for each record in X and y
 		filename_hold: list of filenames for each record in X and y
-		attribs: dictionary of attributes with key = filename
+		attribs: dictionary of attributes with key = filename, also index for getting image from X array
 	Returns:
 		dataframe of the items with their attributes for plotting	
 	'''	
 
 	df1 = pd.DataFrame(zip(filename_hold, groups_hold, y_holdout))
-	df1.columns = (['file', 'group', 'y'])
+	df1.reset_index(inplace=True)
+	df1.columns = (['index', 'file', 'group', 'y'])
 
 	df_att = pd.DataFrame.from_dict({(i): attribs[i]
                            for i in attribs.keys() },
@@ -648,6 +664,26 @@ def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
 	df_merged = pd.merge(df1, df_att, on=['file', 'file'])
 
 	return df_merged	
+
+
+def get_dataframe_w_predict(df1, y_proba):
+	'''
+	Arguments:
+		df1: dataframe from get_dataframe of holdout results
+	Returns:
+		df that includes the prediction results	
+	'''	
+	df_p = pd.DataFrame(list(y_proba))
+	df_p["y_hat_p"]= df_p[[0, 1]].max(axis=1)
+	df_p['y_hat'] = df_p[0].apply(lambda x: 1 if x< .5 else 0)
+
+	df_p.reset_index(inplace=True)
+	df_p.columns = (['index', 'p_0', 'p_1', 'y_hat_p', 'y_hat'])
+
+	df_prob = pd.merge(df1, df_p, on = ['index', 'index'])
+
+	return df_prob
+
 
 if __name__ == '__main__':
 
@@ -663,7 +699,8 @@ if __name__ == '__main__':
 	nb_epoch = args.n_epochs
 	data_multiplier = args.data_multiplier
 	brief_mode = (args.brief_mode == 1)
-	image_size = tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3))
+	
+	image_size = tuple((299, 299, 3)) # tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3))
 	#cropped_size = tuple((299, 299, 3))
 
 	# Load image data
@@ -691,15 +728,19 @@ if __name__ == '__main__':
 
 	# build df of holdouts for plotting
 	df_hold = get_dataframe(y_holdout, groups_hold, filename_hold, ip.images_attributes)
-	print('got df_hold {}'.format(df_hold.iloc[1]))
+	print('got df_hold {}'.format(df_hold.iloc[0]))
+
 
 	#################
 	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)
 
 	# New stuff -------------Transfer model
 
-	target_size = (153, 234)  # 299,299 is suggested for xception but is quite taxing on cpu
+	target_size = (299,299)  # 299,299 is suggested for xception but is quite taxing on cpu
 	#epochs = 5
 	batch_size = 32
 
-	transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
+	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
+
+	df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
+

@@ -140,6 +140,7 @@ def plot_roc(X_test, y_test, model, plot_name):
     ax.legend(loc="lower right")
     savefile= '../imgs/' + plot_name + '.png'
     fig.tight_layout()
+    ax.grid(False)
     plt.savefig(savefile, dpi=200)
     plt.show()
 
