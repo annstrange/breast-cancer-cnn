@@ -354,7 +354,7 @@ class TransferClassificationNet(ClassificationNet):
                                              period=1)
 
         history = model.fit(self.train_datagen,
-                                      steps_per_epoch=self.nTrain/self.batch_size,
+                                      steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=warmup_epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size,

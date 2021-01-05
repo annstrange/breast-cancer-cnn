@@ -610,8 +610,8 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
-	optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
-	optimizers = [Adadelta(lr=0.0006), Adadelta(lr=0.0001)]
+	optimizers = [Adam(lr=0.0006), Adam(lr=0.0001)] # [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
+	optimizers = [Adam(lr=0.0006), Adam(lr=0.0001)]
 
 	warmup_epochs = 5
 	epochs = epochs - warmup_epochs
@@ -622,6 +622,26 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 						optimizers, epochs, freeze_indices, warmup_epochs=warmup_epochs, data_multiplier=data_multiplier)
 
 	# transfer_model.evaluate
+
+def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
+	'''
+	Arguments:
+		y numpy arrays of same len
+		y_pred: numpy array of prediction probabilities by class (top 3 if multiclass)
+		groups_hold: list of slide-ids for each record in X and y
+		filename_hold: list of filenames for each record in X and y
+		attribs: dictionary of attributes with key = filename
+	Returns:
+		dataframe of the items with their attributes for plotting	
+	'''	
+
+	for i, fn in enumerate(filename_hold):
+    	
+
+
+	df = pd.DataFrame(attribs)	
+
+	return df	
 
 if __name__ == '__main__':
 
@@ -663,6 +683,10 @@ if __name__ == '__main__':
 	X_train, X_val, X_holdout, y_train, y_val, y_holdout, groups_tr, groups_val, groups_hold, \
 		filename_tr, filename_val, filename_hold = image_train_val_hold_split(ip)
 
+	# build df of holdouts for plotting
+	df_hold = get_dataframe(X_holdout, y_holdout, groups_hold, filename_hold, ip.images_attributes)
+
+	#################
 	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)
 
 	# New stuff -------------Transfer model
