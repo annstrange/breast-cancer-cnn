@@ -636,17 +636,18 @@ def get_dataframe(y_holdout, groups_hold, filename_hold, attribs):
 		dataframe of the items with their attributes for plotting	
 	'''	
 
-	#for i, fn in enumerate(filename_hold):
-    	
+	df1 = pd.DataFrame(zip(filename_hold, groups_hold, y_holdout))
+	df1.columns = (['file', 'group', 'y'])
 
-	# convert df to pandas df
-	#df_attributes = pd.DataFrame.from_dict({(i): attribs[i]
-    #                       for i in attribs.keys() },
-    #                   orient='index')
+	df_att = pd.DataFrame.from_dict({(i): attribs[i]
+                           for i in attribs.keys() },
+                       orient='index')
+	df_att.reset_index(inplace=True)
+	df_att.columns = (['file', 'tumor_class', 'biopsy_procedure', 'tumor_type', 'year', 'slide_id', 'mag', 'seq', 'image_size'])
 
-	df = pd.DataFrame(attribs)	
+	df_merged = pd.merge(df1, df_att, on=['file', 'file'])
 
-	return df	
+	return df_merged	
 
 if __name__ == '__main__':
 
@@ -689,7 +690,8 @@ if __name__ == '__main__':
 		filename_tr, filename_val, filename_hold = image_train_val_hold_split(ip)
 
 	# build df of holdouts for plotting
-	#df_hold = get_dataframe(X_holdout, y_holdout, groups_hold, filename_hold, ip.images_attributes)
+	df_hold = get_dataframe(y_holdout, groups_hold, filename_hold, ip.images_attributes)
+	print('got df_hold {}'.format(df_hold.iloc[1]))
 
 	#################
 	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)

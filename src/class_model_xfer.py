@@ -364,7 +364,7 @@ class TransferClassificationNet(ClassificationNet):
         model.compile(optimizer=optimizers[1], loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
         history = model.fit(self.train_datagen,
-                                      steps_per_epoch=self.nTrain/self.batch_size,
+                                      steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size,
