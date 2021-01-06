@@ -623,7 +623,7 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	model_fxn = create_transfer_model
 	freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
 	optimizers = [Adadelta(lr=0.0006), Adadelta(lr=0.0001)] # [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
-	optimizers = [SGD(lr=0.00006), SGD(lr=0.00001)]
+	#optimizers = [SGD(lr=0.00006), SGD(lr=0.00001)]
 
 	warmup_epochs = 5
 	epochs = epochs - warmup_epochs
