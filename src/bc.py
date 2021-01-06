@@ -736,7 +736,8 @@ if __name__ == '__main__':
 
 	# New stuff -------------Transfer model
 
-	target_size = (100,100)  # 299,299 is suggested for xception but is quite taxing on cpu
+	target_size = (299,299)  # 299,299 is suggested for xception but is quite taxing on cpu
+	# Todo: bugfix ValueError: Error when checking input: expected input_1 to have shape (100, 100, 3) but got array with shape (299, 299, 3)
 	#epochs = 5
 	batch_size = 32
 
