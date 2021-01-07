@@ -458,7 +458,7 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch=nb_epoch
 	optimizer = 'Adadelta'
 
 	cnn.compile_model(optimizer_name=optimizer)
-	cnn.fn_epoit(X_train, X_holdout, y_train, y_holdout)
+	cnn.fit(X_train, X_holdout, y_train, y_holdout)
 	cnn.load_and_featurize_data()
 
 	# during fit process watch train and test error simultaneously
