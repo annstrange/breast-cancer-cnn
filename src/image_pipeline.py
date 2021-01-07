@@ -350,11 +350,11 @@ class ImagePipeline(object):
         # Apply to one test case
         if img_ind is not None:
             img_arr = self.images_list[img_ind]
-            img_arr = func(img_arr, **params).astype(float)
+            img_arr = func(img_arr, **params).astype(np.uint8)
             return(img_arr)
         else:  # This is a lot, fyi
             new_images_list = self.images_list
-            new_images_list = ([func(img_arr, **params).astype(float) for img_arr in self.images_list])
+            new_images_list = ([func(img_arr, **params).astype(np.uint8) for img_arr in self.images_list])
             return(new_images_list)
 
     def transform(self, func, params, img_ind=None):
@@ -368,13 +368,13 @@ class ImagePipeline(object):
         # Apply to one test case
         if img_ind is not None:
             img_arr = self.images_list[img_ind]
-            img_arr = func(img_arr, **params).astype(float)
+            img_arr = func(img_arr, **params).astype(np.uint8)
             io.imshow(img_arr)
             plt.grid(b=None)
             plt.show()
         # Apply the function and parameters to all the images
         else:
-            new_images_list = ([func(img_arr, **params).astype(float) for img_arr in self.images_list])
+            new_images_list = ([func(img_arr, **params).astype(np.uint8) for img_arr in self.images_list])
             self.images_list = new_images_list
 
     def grayscale(self, img_ind=None):
@@ -419,7 +419,7 @@ class ImagePipeline(object):
             shape: A tuple of 2 or 3 dimensions depending on if your images are grayscaled or not
             save: Boolean to save the images in new directories or not
         """
-        self.transform(transform.resize, dict(output_shape=shape))
+        self.transform(transform.resize, dict(output_shape=shape, preserve_range=True, anti_aliasing=True))
         
         #if save:
         #    shape_str = '_'.join(map(str, shape))
@@ -439,7 +439,7 @@ class ImagePipeline(object):
         Take a list of images and vectorize all the images. Returns a 3D feature matrix 
         """
         #print('images_list len {} '.format(len(self.images_list) ))
-        to_array = np.array(self.images_list, dtype=np.float32)
+        to_array = np.array(self.images_list, dtype=np.uint8)
         #print('shape of np array converted images_list going in {}'.format(to_array.shape))
 
         self.features = to_array
