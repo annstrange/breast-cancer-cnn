@@ -572,7 +572,7 @@ def image_train_val_hold_split(ip):
 	return X_train, X_val, X_holdout, y_train, y_val, y_holdout, groups_tr, groups_val, groups_hold, filename_tr, filename_val, filename_hold
 
 
-def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
+def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier):
 	'''
 	Args:
 		ip has the image data read in and vectorized
@@ -589,7 +589,7 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 	# for Kfolds, do not do second split
 	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
 
-	execute_model(cnn, X_train, X_val, y_train, y_val)
+	execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
 	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
 	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)
