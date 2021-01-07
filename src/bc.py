@@ -85,7 +85,7 @@ data_multiplier = 1
 #root_dir = '../BreaKHis_v1/histology_slides/breast'
 
 #image_size = tuple((153, 234, 3))
-image_size = tuple((299, 299, 3))		#tuple((153, 234, 3))  # preserve aspect ratio
+image_size = tuple((153, 234, 3)) #tuple((299, 299, 3))	 # preserve aspect ratio
 
 
 def read_images(root_dir, sub_dirs= ['all'], brief_mode=False): 
@@ -267,7 +267,7 @@ def run_pipeline(brief_mode=False):
 
 	ip = read_images(root_dir, ['200X'], brief_mode=brief_mode)
 	#ip = read_images(root_dir)  # for all by default, this is heavy
-	ip.apply_square_crop()
+	#ip.apply_square_crop()
 	ip.resize(shape = image_size)
 	return ip
 
@@ -701,7 +701,7 @@ if __name__ == '__main__':
 	data_multiplier = args.data_multiplier
 	brief_mode = (args.brief_mode == 1)
 	
-	image_size = tuple((299, 299, 3)) # tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3))
+	image_size =   tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3)) tuple((299, 299, 3))
 	#cropped_size = tuple((299, 299, 3))
 
 	# Load image data
@@ -741,7 +741,7 @@ if __name__ == '__main__':
 
 	# New stuff -------------Transfer model
 
-	target_size = (299,299)  # 299,299 is suggested for xception but is quite taxing on cpu
+	#target_size = (299,299)  # 299,299 is suggested for xception but is quite taxing on cpu
 	# Todo: bugfix ValueError: Error when checking input: expected input_1 to have shape (100, 100, 3) but got array with shape (299, 299, 3)
 	#epochs = 5
 	batch_size = 32
