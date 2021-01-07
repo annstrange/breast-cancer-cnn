@@ -572,7 +572,7 @@ def image_train_val_hold_split(ip):
 	return X_train, X_val, X_holdout, y_train, y_val, y_holdout, groups_tr, groups_val, groups_hold, filename_tr, filename_val, filename_hold
 
 
-def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
+def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
 	'''
 	Args:
 		ip has the image data read in and vectorized
@@ -592,8 +592,9 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, nb_e
 	execute_model(cnn, X_train, X_val, y_train, y_val)
 	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
-	evaluate_model(cnn, X_holdout, y_holdout)
-
+	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)
+	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
+	
 	#cnn.model.save('../models/saved_model.h5')
 	# With winning model(s), send validation data thru and get predict metrics
 	# todo: set acutal winning hypteparameters on the cnn 
@@ -732,7 +733,11 @@ if __name__ == '__main__':
 
 
 	#################
-	# run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout)
+	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold)
+	
+
+
+
 
 	# New stuff -------------Transfer model
 
@@ -741,7 +746,8 @@ if __name__ == '__main__':
 	#epochs = 5
 	batch_size = 32
 
-	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
+	
+	# tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
 
-	df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
+	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
 
