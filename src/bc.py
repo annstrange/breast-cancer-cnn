@@ -458,7 +458,7 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch=nb_epoch
 	optimizer = 'Adadelta'
 
 	cnn.compile_model(optimizer_name=optimizer)
-	cnn.fit(X_train, X_holdout, y_train, y_holdout)
+	cnn.fn_epoit(X_train, X_holdout, y_train, y_holdout)
 	cnn.load_and_featurize_data()
 
 	# during fit process watch train and test error simultaneously
@@ -594,7 +594,7 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 
 	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
-	
+
 	#cnn.model.save('../models/saved_model.h5')
 	# With winning model(s), send validation data thru and get predict metrics
 	# todo: set acutal winning hypteparameters on the cnn 
@@ -733,7 +733,7 @@ if __name__ == '__main__':
 
 
 	#################
-	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold)
+	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
 	
 
 
