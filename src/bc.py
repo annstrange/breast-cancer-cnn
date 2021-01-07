@@ -450,7 +450,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3, nb_epoch=n
 	# establish mean accuracy, recall, precision	
 	print(score_labeled)
 
-def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch=nb_epoch, data_multiplier=data_multiplier):
+def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch, data_multiplier):
 	# This method assumes we've chosen our model and hyperparameters and are going for it.
 
 	scores = np.zeros(3)
