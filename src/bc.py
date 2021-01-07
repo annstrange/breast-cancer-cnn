@@ -265,9 +265,10 @@ def run_pipeline(brief_mode=False):
 	'''
 
 
-	ip = read_images(root_dir, ['200X'], brief_mode=brief_mode)
+	ip = read_images(root_dir, ['200X'], brief_mode)
 	#ip = read_images(root_dir)  # for all by default, this is heavy
 	#ip.apply_square_crop()
+
 	ip.resize(shape = image_size)
 	return ip
 
@@ -587,9 +588,9 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 
 	##################### KFOlds #############
 	# for Kfolds, do not do second split
-	# run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+	run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
 
-	execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
+	#execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
 	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
 	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)

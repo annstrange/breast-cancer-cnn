@@ -133,7 +133,7 @@ class CNN(object):
 
         self.datagen = image_gen_train.flow(self.X_train, self.y_train, shuffle=True)
 
-        image_gen_val = preprocessing.image.ImageDataGenerator()
+        image_gen_val = preprocessing.image.ImageDataGenerator( rescale=1./255)
         #image_gen_val.fit(self.X_test)
         self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, shuffle=True)
         # compute quantities required for featurewise normalization
