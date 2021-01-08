@@ -487,7 +487,7 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	# does my holdout data look ok?
 	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 
-	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1, threshold=.02)
+	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
 	print ('score from model.evaluate {}'.format(score))
 
 	#try:
