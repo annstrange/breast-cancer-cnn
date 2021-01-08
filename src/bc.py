@@ -480,21 +480,25 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''	
 
 	# Holdout scaled and reshaped?
+	print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 	X_holdout = X_holdout.astype('float32')
-	X_holdout /= 255 
+	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 
-	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
+	# does my holdout data look ok?
+	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
+
+	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1, threshold=.02)
 	print ('score from model.evaluate {}'.format(score))
 
-	try:
-		modelname = modelx.project_name
-		print ('roc_plot_' + modelx.project_name)
-		plot_roc(X_holdout, y_holdout, modelx.model, 'roc_plot_' + modelx.project_name)
-	except:
-		'Plot_roc failed'	
+	#try:
+		#modelname = modelx.project_name
+		#print ('roc_plot_' + modelx.project_name)
+		#plot_roc(X_holdout, y_holdout, modelx.model, 'roc_plot_' + modelx.project_name)
+	#except:
+	#	'Plot_roc failed'	
 
 	y_pred = modelx.model.predict(X_holdout)
-	print('predict results \n{}'.format(y_pred[:20]))
+	print('predict results \n{}'.format(y_pred[:10]))
 
 	#Taking argmax will tell the winner of each by highest probability. 
 	y_pred_1D = np.argmax(y_pred, axis=-1).reshape(-1, 1)

@@ -179,8 +179,8 @@ class CNN(object):
         self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
         self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
         #self.X_holdout = self.X_holdout.astype('float32')
-        self.X_train /= 255  # normalizing (scaling from 0 to 1)
-        self.X_test /= 255   # normalizing (scaling from 0 to 1)
+        self.X_train /= 255.0  # normalizing (scaling from 0 to 1)
+        self.X_test /= 255.0   # normalizing (scaling from 0 to 1)
         #self.X_holdout /= 255 
 
         print('X_train shape:', self.X_train.shape)
@@ -303,6 +303,12 @@ class CNN(object):
                         name='categorical_crossentropy')
         '''                
         # or Adadelta  defaults are learning_rate=0.001, rho=0.95, epsilon=1e-07, name='Adadelta'
+
+        # Calculates for us
+        # tf.compat.v1.metrics.recall_at_thresholds(
+        #    labels, predictions, thresholds=, weights=None, metrics_collections=None,
+        #    updates_collections=None, name=None
+        #)
 
         self.model.compile(loss='sparse_categorical_crossentropy',   # 
                     optimizer='Adadelta',  # adapts learning rates based on a moving window of gradient updates, ...
