@@ -429,7 +429,7 @@ def run_Kfolds(cnn, X_train, y_train, groups, filename_list, folds=3, nb_epoch=n
 			cnn.load_and_featurize_data()
 	
 			# during fit process watch train and test error simultaneously
-			print ('About to call fit_model/start training')
+			print ('About to call fit_model/start training w epochs {} and data mux {}'.format(nb_epoch, data_multiplier))
 			cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
@@ -463,7 +463,7 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch, data_mu
 	cnn.load_and_featurize_data()
 
 	# during fit process watch train and test error simultaneously
-	print ('About to call fit_model')
+	print ('About to call train_model with epochs {} mux {}'.format(nb_epoch, data_multiplier))
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
@@ -588,9 +588,9 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 
 	##################### KFOlds #############
 	# for Kfolds, do not do second split
-	run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3)
+	#run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3, nb_epoch, data_multiplier)
 
-	#execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
+	execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
 	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
 	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)

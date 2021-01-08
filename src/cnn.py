@@ -115,7 +115,7 @@ class CNN(object):
                                                                 rotation_range=20, 
                                                                 #featurewise_center=False,
                                                                 #zca_whitening=True,
-                                                                #rescale=1./255,
+                                                                rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
                                                                 #zoom_range=10,
@@ -133,7 +133,7 @@ class CNN(object):
 
         self.datagen = image_gen_train.flow(self.X_train, self.y_train, shuffle=True)
 
-        image_gen_val = preprocessing.image.ImageDataGenerator( rescale=1./255)
+        image_gen_val = preprocessing.image.ImageDataGenerator( rescale=1./255,)
         #image_gen_val.fit(self.X_test)
         self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, shuffle=True)
         # compute quantities required for featurewise normalization
@@ -170,12 +170,14 @@ class CNN(object):
         #  (1358, 230187) where 230187 is image dimensions
         # needed?
 
-        self.X_train = self.X_train.reshape(self.X_train.shape[0], img_rows, img_cols, 3)
-        self.X_test = self.X_test.reshape(self.X_test.shape[0], img_rows, img_cols, 3)
+        # comment out 5:30p Thur
+        #self.X_train = self.X_train.reshape(self.X_train.shape[0], img_rows, img_cols, 3)
+        #self.X_test = self.X_test.reshape(self.X_test.shape[0], img_rows, img_cols, 3)
+
 
         # convert and normalization
-        #self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
-        #self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
+        self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
+        self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
         #self.X_train /= 255  # normalizing (scaling from 0 to 1)
         #self.X_test /= 255   # normalizing (scaling from 0 to 1)
 
@@ -303,7 +305,7 @@ class CNN(object):
         self.model.compile(loss='sparse_categorical_crossentropy',   # 
                     optimizer='Adadelta',  # adapts learning rates based on a moving window of gradient updates, ...
                     # instead of accumulating all past gradients. This way, Adadelta continues learning even when many updates have been done.
-                    metrics=['accuracy' ])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
+                    metrics=['accuracy'])  # we might prefer to use F1, Precision, or sparse_categorical_crossentropy, crossentropy
 
         print ('model \n {}'.format(self.model.summary() ))   
      
