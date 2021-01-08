@@ -480,7 +480,8 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''	
 
 	# Holdout scaled and reshaped?
-
+	X_holdout = X_holdout.astype('float32')
+	X_holdout /= 255 
 
 	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
 	print ('score from model.evaluate {}'.format(score))

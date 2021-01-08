@@ -178,10 +178,10 @@ class CNN(object):
         # convert and normalization
         self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
         self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
-        self.X_holdout = self.X_holdout.astype('float32')
+        #self.X_holdout = self.X_holdout.astype('float32')
         self.X_train /= 255  # normalizing (scaling from 0 to 1)
         self.X_test /= 255   # normalizing (scaling from 0 to 1)
-        self.X_holdout /= 255 
+        #self.X_holdout /= 255 
 
         print('X_train shape:', self.X_train.shape)
         print(self.X_train.shape[0], 'train samples')
