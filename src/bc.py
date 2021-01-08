@@ -479,6 +479,9 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	Run holdout data through predict to get metrics and generate ROC
 	'''	
 
+	# Holdout scaled and reshaped?
+
+
 	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
 	print ('score from model.evaluate {}'.format(score))
 
@@ -489,7 +492,7 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	except:
 		'Plot_roc failed'	
 
-	y_pred = modelx.model.predict(X_holdout)
+	y_pred = modelx.model.predict_proba(X_holdout)
 	print('predict results \n{}'.format(y_pred[:20]))
 
 	#Taking argmax will tell the winner of each by highest probability. 
@@ -549,6 +552,9 @@ def image_train_val_hold_split(ip):
 	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_hold, filename_tr, filename_hold  = \
 			train_holdouts_split_by_group(X, y, \
 			groups=groups, filename_list=filename_list, holdout_pct=0.1)
+
+	# Since holdouts doesn't get attached to datagen, apply any preprocessing, rescale
+	X_holdout 
 
 	print ('after train_holdouts_split')
 

@@ -115,7 +115,7 @@ class CNN(object):
                                                                 rotation_range=20, 
                                                                 #featurewise_center=False,
                                                                 #zca_whitening=True,
-                                                                rescale=1./255,
+                                                                #rescale=1./255,
                                                                 #class_mode='binary'
                                                                 #featurewise_std_normalization=True,
                                                                 #zoom_range=10,
@@ -133,7 +133,7 @@ class CNN(object):
 
         self.datagen = image_gen_train.flow(self.X_train, self.y_train, shuffle=True)
 
-        image_gen_val = preprocessing.image.ImageDataGenerator( rescale=1./255,)
+        image_gen_val = preprocessing.image.ImageDataGenerator( )
         #image_gen_val.fit(self.X_test)
         self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, shuffle=True)
         # compute quantities required for featurewise normalization
@@ -178,8 +178,10 @@ class CNN(object):
         # convert and normalization
         self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
         self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
-        #self.X_train /= 255  # normalizing (scaling from 0 to 1)
-        #self.X_test /= 255   # normalizing (scaling from 0 to 1)
+        self.X_holdout = self.X_holdout.astype('float32')
+        self.X_train /= 255  # normalizing (scaling from 0 to 1)
+        self.X_test /= 255   # normalizing (scaling from 0 to 1)
+        self.X_holdout /= 255 
 
         print('X_train shape:', self.X_train.shape)
         print(self.X_train.shape[0], 'train samples')
@@ -199,7 +201,7 @@ class CNN(object):
                     activation='relu',
                     input_shape=input_shape))  # first conv. layer, expect input shape to be image shape e.g. 227x227x3?
 
-        # model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
+        model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
         model.add(Dropout(0.2))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # l2
@@ -209,7 +211,7 @@ class CNN(object):
                         padding='valid'))  # 2nd conv. layer KEEP
 
         model.add(MaxPooling2D(pool_size=pool_size))  # decreases size, helps prevent overfitting
-        model.add(Dropout(0.1))  # zeros out some fraction of inputs, helps prevent overfitting
+        model.add(Dropout(0.2))  # zeros out some fraction of inputs, helps prevent overfitting
 
         # L3
         model.add(Conv2D(nb_filters * 4,
