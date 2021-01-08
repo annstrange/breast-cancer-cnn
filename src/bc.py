@@ -493,7 +493,7 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	except:
 		'Plot_roc failed'	
 
-	y_pred = modelx.model.predict_proba(X_holdout)
+	y_pred = modelx.model.predict(X_holdout)
 	print('predict results \n{}'.format(y_pred[:20]))
 
 	#Taking argmax will tell the winner of each by highest probability. 
