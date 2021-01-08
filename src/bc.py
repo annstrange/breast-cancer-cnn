@@ -483,7 +483,6 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 	X_holdout = X_holdout.astype('float32')
 	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
-
 	# does my holdout data look ok?
 	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 
@@ -602,7 +601,6 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 	#run_Kfolds(cnn, X_train, y_train, groups=groups_tr, filename_list=filename_tr, folds=3, nb_epoch, data_multiplier)
 
 	execute_model(cnn, X_train, X_val, y_train, y_val,nb_epoch, data_multiplier )
-	# execute_model(cnn, X_train, X_holdout, y_train, y_holdout, groups=groups_tr, filename_list=filename_tr)
 
 	df_results = evaluate_model(cnn, X_holdout, y_holdout, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
@@ -745,21 +743,19 @@ if __name__ == '__main__':
 
 
 	#################
-	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
+	#run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
 	
-
-
-
 
 	# New stuff -------------Transfer model
 
-	#target_size = (299,299)  # 299,299 is suggested for xception but is quite taxing on cpu
+	target_size = image_size[:2]  # 299,299 is suggested for xception but is quite taxing on cpu
+	print (target_size)
 	# Todo: bugfix ValueError: Error when checking input: expected input_1 to have shape (100, 100, 3) but got array with shape (299, 299, 3)
 	#epochs = 5
 	batch_size = 32
 
 	
-	# tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
+	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
 
 	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
 

@@ -91,6 +91,18 @@ class ClassificationNet(object):
             is_save: whether to output augmented images for use by future comparison models
             aug_dir: filepath
         '''
+        # convert and normalization
+        self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
+        self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
+        #self.X_holdout = self.X_holdout.astype('float32')
+        self.X_train /= 255.0  # normalizing (scaling from 0 to 1)
+        self.X_test /= 255.0   # normalizing (scaling from 0 to 1)
+        #self.X_holdout /= 255 
+
+        print('X_train shape:', self.X_train.shape)
+        print(self.X_train.shape[0], 'train samples')
+        print(self.X_test.shape[0], 'test samples')
+
         image_gen_train = preprocessing.image.ImageDataGenerator(rotation_range=20, 
                                                                 #zoom_range=10,
                                                                 width_shift_range=0.2,
@@ -226,6 +238,13 @@ class ClassificationNet(object):
         if y_holdout is not None:
             self.y_holdout = y_holdout  
             self.nHoldout = len(y_holdout)  
+        	# Holdout scaled and reshaped?
+
+        print ('X_holdout (before rescale) values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))
+        self.X_holdout = self.X_holdout.astype('float32')
+        self.X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+        # does my holdout data look ok?
+        print ('X_holdout values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))    
 
         print ('shapes in evaluate_model X {} y {}'.format(self.X_holdout.shape, self.y_holdout.shape))    
 
