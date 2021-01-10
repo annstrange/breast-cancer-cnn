@@ -467,7 +467,7 @@ def execute_model(cnn, X_train, X_holdout, y_train, y_holdout, nb_epoch, data_mu
 	cnn.train_model( batch_size=32, epochs=nb_epoch,
 				verbose=1, data_augmentation=True, data_multiplier=data_multiplier)
 
-	cnn.model.save('../models/saved_model.h5')
+	cnn.model.save('../models/saved_cnn_model.h5')
 
 def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''
@@ -480,26 +480,26 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''	
 
 	# Holdout scaled and reshaped?
-	#print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
-	#X_holdout = X_holdout.astype('float32')
-	#X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+	print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
+	X_holdout = X_holdout.astype('float32')
+	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 	# does my holdout data look ok?
 	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 
 	score = modelx.model.evaluate(X_holdout, y_holdout, verbose=1)
 	print ('score from model.evaluate {}'.format(score))
 
-	#try:
-		#modelname = modelx.project_name
-		#print ('roc_plot_' + modelx.project_name)
-		#plot_roc(X_holdout, y_holdout, modelx.model, 'roc_plot_' + modelx.project_name)
-	#except:
-	#	'Plot_roc failed'	
+	try:
+		modelname = modelx.project_name
+		print ('roc_plot_' + modelx.project_name)
+		plot_roc(X_holdout, y_holdout, modelx.model, 'roc_plot_' + modelx.project_name)
+	except:
+		'Plot_roc failed'	
 
 	y_pred = modelx.model.predict(X_holdout)
 	print('predict results \n{}'.format(y_pred[:10]))
 
-	#Taking argmax will tell the winner of each by highest probability. 
+	#Taking argmax will tell the winner of each by highest probability.  Here's where we can threshold
 	y_pred_1D = np.argmax(y_pred, axis=-1).reshape(-1, 1)
 
 	print (classification_report(y_holdout, y_pred_1D)) 
@@ -654,8 +654,8 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 	# evaluate_model(transfer_model, X_holdout, y_holdout)
 	# Do rescale out here, once
-	X_holdout = X_holdout.astype('float32')
-	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+	#X_holdout = X_holdout.astype('float32')
+	#X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 
 	# This one used data gen
 	transfer_model.evaluate_model(X_holdout, y_holdout)
@@ -739,7 +739,7 @@ if __name__ == '__main__':
 	data_multiplier = args.data_multiplier
 	brief_mode = (args.brief_mode == 1)
 	
-	image_size =  tuple((224, 288)) # tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3)) tuple((299, 299, 3))
+	image_size =  tuple((224, 288, 3)) # tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3)) tuple((299, 299, 3))
 	#cropped_size = tuple((299, 299, 3))
 
 	# Load image data
@@ -773,7 +773,7 @@ if __name__ == '__main__':
 	df_val = get_dataframe(y_val, groups_val, filename_val, ip.images_attributes)
 
 	#################
-	#run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
+	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
 	
 
 	# New stuff -------------Transfer model
@@ -785,7 +785,7 @@ if __name__ == '__main__':
 	batch_size = 32
 
 	
-	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier, df_hold, df_val)
+	#tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier, df_hold, df_val)
 
 	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
 

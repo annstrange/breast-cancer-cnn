@@ -25,7 +25,8 @@ def add_model_head(base_model, n_categories):
 
     model = Model(inputs=base_model.input, outputs=predictions)
 
-    print ('model \n {}'.format(model.summary() ))  
+    #print ('model \n {}'.format(model.summary() ))  
+    # this says we have 20 million trainable layers
 
     return model
 
