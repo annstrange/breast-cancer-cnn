@@ -98,6 +98,7 @@ class ClassificationNet(object):
         self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
         self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
         #self.X_holdout = self.X_holdout.astype('float32')
+        # traded for normalizing in data gen
         self.X_train /= 255.0  # normalizing (scaling from 0 to 1)
         self.X_test /= 255.0   # normalizing (scaling from 0 to 1)
         #self.X_holdout /= 255 
@@ -108,6 +109,7 @@ class ClassificationNet(object):
 
         image_gen_train = preprocessing.image.ImageDataGenerator(rotation_range=20, 
                                                                 #zoom_range=10,
+                                                                #featurewise_std_normalization=True,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
                                                                 horizontal_flip=True, 
@@ -125,7 +127,7 @@ class ClassificationNet(object):
                                                   shuffle=True,
                                                   )
 
-        image_gen_val = preprocessing.image.ImageDataGenerator( )
+        image_gen_val = preprocessing.image.ImageDataGenerator()
 
         self.validation_datagen = image_gen_val.flow(self.X_test, 
                                               self.y_test, 
@@ -385,7 +387,8 @@ class TransferClassificationNet(ClassificationNet):
 
         model = model_fxn(self.input_size, self.n_categories)
         self.change_trainable_layers(model, freeze_indices[0])
-
+        # same as saying base_model.trainable = False  
+        # model.trainable = False  # also says not to update mean and variance stats; keeps base model in inference mode
 
         model.compile(optimizer=optimizers[0],
                       loss='sparse_categorical_crossentropy', metrics=['accuracy'])
