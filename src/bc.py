@@ -85,7 +85,7 @@ data_multiplier = 1
 #root_dir = '../BreaKHis_v1/histology_slides/breast'
 
 #image_size = tuple((153, 234, 3))
-image_size = tuple((153, 234, 3)) #tuple((299, 299, 3))	 # preserve aspect ratio
+image_size = tuple((224, 288)) #tuple((153, 234, 3)) #tuple((299, 299, 3))	 # preserve aspect ratio
 
 
 def read_images(root_dir, sub_dirs= ['all'], brief_mode=False): 
@@ -732,7 +732,7 @@ if __name__ == '__main__':
 	data_multiplier = args.data_multiplier
 	brief_mode = (args.brief_mode == 1)
 	
-	image_size =   tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3)) tuple((299, 299, 3))
+	image_size =  tuple((224, 288)) # tuple((153, 234, 3))  # preserve aspect ratio tuple((307,467, 3)) tuple((299, 299, 3))
 	#cropped_size = tuple((299, 299, 3))
 
 	# Load image data
