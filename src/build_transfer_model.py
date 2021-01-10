@@ -15,8 +15,8 @@ def add_model_head(base_model, n_categories):
         """
 
     x = base_model.output
-    x = Dropout(0.2)(x)
     x = GlobalAveragePooling2D()(x)
+    x = Dropout(0.2)(x)
     predictions = Dense(n_categories, activation='softmax')(x)
 
     # how to add Dropouts here?

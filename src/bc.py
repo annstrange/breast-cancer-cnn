@@ -618,7 +618,7 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 		print ('finish without history')	
     		
 
-def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size, data_multiplier):
+def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, epochs, batch_size, data_multiplier, df_hold, df_val):
 	'''
 	Run a transfer model from Xception
 	'''
@@ -651,12 +651,17 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 
 	# This one used data gen
-	transfer_model.evaluate_model(transfer_model.model, X_holdout, y_holdout)
+	transfer_model.evaluate_model(transfer_model.model, X_val, y_val)
 
 	# This evaluate is a little nicer maybe... but redundant with above (to delete)
-	print (' ************* Nicer Evaluation (i think) *****************')
+	#print (' ************* Nicer Evaluation (i think) *****************')
+	#df_results_val = evaluate_model(transfer_model, X_val, y_val, df_val)
+	#print ('Validation evaluation results {}'.format(df_results.iloc[0]))
+
+	print (' ************* Back to Holdout *****************')
 	df_results = evaluate_model(transfer_model, X_holdout, y_holdout, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
+
 
 	try:
 		if (transfer_model.history is not None):
@@ -757,6 +762,8 @@ if __name__ == '__main__':
 	df_hold = get_dataframe(y_holdout, groups_hold, filename_hold, ip.images_attributes)
 	print('got df_hold {}'.format(df_hold.iloc[0]))
 
+	# get df_val for fun
+	df_val = get_dataframe(y_val, groups_val, filename_val, ip.images_attributes)
 
 	#################
 	#run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
@@ -771,7 +778,7 @@ if __name__ == '__main__':
 	batch_size = 32
 
 	
-	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier)
+	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier, df_hold, df_val)
 
 	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
 
