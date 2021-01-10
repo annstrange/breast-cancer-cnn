@@ -117,7 +117,7 @@ class CNN(object):
                                                                 #zca_whitening=True,
                                                                 #rescale=1./255,
                                                                 #class_mode='binary'
-                                                                featurewise_std_normalization=True,
+                                                                #featurewise_std_normalization=True,
                                                                 #zoom_range=10,
                                                                 width_shift_range=0.2,
                                                                 height_shift_range=0.2,
@@ -133,7 +133,7 @@ class CNN(object):
 
         self.datagen = image_gen_train.flow(self.X_train, self.y_train, shuffle=True)
 
-        image_gen_val = preprocessing.image.ImageDataGenerator(featurewise_std_normalization=True)
+        image_gen_val = preprocessing.image.ImageDataGenerator()
         #image_gen_val.fit(self.X_test)
         self.val_datagen = image_gen_val.flow(self.X_test, self.y_test, shuffle=True)
         # compute quantities required for featurewise normalization
