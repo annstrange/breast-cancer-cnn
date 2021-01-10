@@ -653,14 +653,15 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	# This one used data gen
 	transfer_model.evaluate_model(transfer_model.model, X_holdout, y_holdout)
 
-	# This evaluate is a little nicer maybe...
+	# This evaluate is a little nicer maybe... but redundant with above (to delete)
 	print (' ************* Nicer Evaluation (i think) *****************')
 	df_results = evaluate_model(transfer_model, X_holdout, y_holdout, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
 
-	if (transfer_model.history is not None):
-		plot_training_results(history = transfer_model, epochs=nb_epoch, filename='history_transfer_model')
-	else:
+	try:
+		if (transfer_model.history is not None):
+			plot_training_results(history = transfer_model, epochs=nb_epoch, filename='history_transfer_model')
+	except:
 		print ('finish without history')	
 
 	return transfer_model

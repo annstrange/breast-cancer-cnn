@@ -14,6 +14,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout
 from tensorflow.keras.optimizers import SGD, RMSprop, Adadelta
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.preprocessing import LabelBinarizer
+from tensorflow.keras.callbacks import TensorBoard
 from sklearn.utils import shuffle
 
 from build_transfer_model import create_transfer_model
@@ -192,8 +193,12 @@ class ClassificationNet(object):
         model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
         # Initialize tensorboard for monitoring
-        tensorboard = keras.callbacks.TensorBoard(
-            log_dir=self.project_name, histogram_freq=0, batch_size=self.batch_size, write_graph=True, embeddings_freq=0)
+        #tensorboard = keras.callbacks.TensorBoard(
+        #    log_dir=self.project_name, histogram_freq=0, batch_size=self.batch_size, write_graph=True, embeddings_freq=0)
+
+        tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
+                                 update_freq='epoch')    
+
         if not os.path.exists('models'):
             os.makedirs('models')
 
@@ -210,8 +215,10 @@ class ClassificationNet(object):
                                       epochs=epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size ,
-                                      callbacks=[tensorboard])
+                                      callbacks=[tbCallBack])
 
+
+        print ('What does self.history look like {}'.format(self.history))
         # save just-fit model to compare
         model.save('../models/saved_xfer_model.h5')
 
@@ -384,12 +391,14 @@ class TransferClassificationNet(ClassificationNet):
                       loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
         # Initialize tensorboard for monitoring
-        tensorboard = keras.callbacks.TensorBoard(log_dir=self.project_name, 
-                                                  histogram_freq=0, 
-                                                  batch_size=self.batch_size, 
-                                                  write_graph=True, 
-                                                  embeddings_freq=0,
-                                                  update_freq='epoch')
+        #tensorboard = keras.callbacks.TensorBoard(log_dir=self.project_name, 
+        #                                          histogram_freq=0, 
+        #                                          batch_size=self.batch_size, 
+        #                                          write_graph=True, 
+        #                                          embeddings_freq=0,
+        #                                          update_freq='epoch')
+        tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
+                            update_freq='epoch')                                             
 
         if not os.path.exists('models'):
             os.makedirs('models')
@@ -404,21 +413,25 @@ class TransferClassificationNet(ClassificationNet):
 
         self.history = model.fit(self.train_datagen,
                                       steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
-                                      epochs=warmup_epochs,
+                                      #epochs=warmup_epochs,
+                                      epochs=warmup_epochs+epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size,
-                                      callbacks=[tensorboard])
+                                      callbacks=[tbCallBack])
 
-        self.change_trainable_layers(model, freeze_indices[1])
-        model.compile(optimizer=optimizers[1], loss='sparse_categorical_crossentropy',
-                      metrics=['accuracy'])
-        self.history = model.fit(self.train_datagen,
-                                      steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
-                                      epochs=epochs,
-                                      validation_data=self.validation_datagen,
-                                      validation_steps=self.nVal/self.batch_size,
-                                      callbacks=[tensorboard])
+        print ('history from model.fit looks like {}'.format(self.history))                             
+
+        #self.change_trainable_layers(model, freeze_indices[1])
+        #model.compile(optimizer=optimizers[1], loss='sparse_categorical_crossentropy',
+        #              metrics=['accuracy'])
+        #self.history = model.fit(self.train_datagen,
+        #                              steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
+        #                              epochs=epochs,
+        #                              validation_data=self.validation_datagen,
+        #                              validation_steps=self.nVal/self.batch_size,
+        #                              callbacks=[tbCallBack])
         # save just-fit model to compare
+
         model.save('../models/saved_xfer_model.h5')
 
         #best_model = load_model(savename)

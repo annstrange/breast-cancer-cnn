@@ -22,6 +22,9 @@ def show_9grid_image(train_ds):
 def plot_training_results(history, epochs, filename):
     if history is None:
         return
+
+    print ('what does transfer hist look like')
+    print (history.history)    
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
 
