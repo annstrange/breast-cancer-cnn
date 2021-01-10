@@ -543,6 +543,9 @@ def image_train_val_hold_split(ip):
 	'''
 	Do the image splits once, for all models to execute (not for Kfolds)
 	'''	
+	# To destry/ignore groups, override
+	ip.group_list = np.arange(0, len(ip.group_list))
+
 	# shuffle! Keep filename and attributes lists in same order
 	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
 
@@ -645,20 +648,24 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 						optimizers, epochs, freeze_indices, warmup_epochs=warmup_epochs, data_multiplier=data_multiplier)
 
 
+	# Evaluate on validation data
+	print ('assess validation data')
+	transfer_model.evaluate_model(X_val, y_val)
+
 	# evaluate_model(transfer_model, X_holdout, y_holdout)
 	# Do rescale out here, once
 	X_holdout = X_holdout.astype('float32')
 	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 
 	# This one used data gen
-	transfer_model.evaluate_model(transfer_model.model, X_val, y_val)
+	transfer_model.evaluate_model(X_holdout, y_holdout)
 
 	# This evaluate is a little nicer maybe... but redundant with above (to delete)
 	#print (' ************* Nicer Evaluation (i think) *****************')
 	#df_results_val = evaluate_model(transfer_model, X_val, y_val, df_val)
 	#print ('Validation evaluation results {}'.format(df_results.iloc[0]))
 
-	print (' ************* Back to Holdout *****************')
+	print (' ************* Holdout *****************')
 	df_results = evaluate_model(transfer_model, X_holdout, y_holdout, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
 

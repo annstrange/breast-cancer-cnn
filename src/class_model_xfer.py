@@ -250,7 +250,7 @@ class ClassificationNet(object):
         return savename
         '''
 
-    def evaluate_model(self, model, X_holdout=None, y_holdout=None):
+    def evaluate_model(self, X_holdout=None, y_holdout=None):
         """
         evaluates model on holdout data
         Args:
@@ -262,35 +262,34 @@ class ClassificationNet(object):
 
         # assume model is set
         if self.model is None:
-            print ('weird: no model is set, ok will use the model you passed in')
+            print ('weird: no model is set, ')
 
+        '''
         if X_holdout is not None:
             self.X_holdout = X_holdout    
         if y_holdout is not None:
             self.y_holdout = y_holdout  
             self.nHoldout = len(y_holdout)  
         	# Holdout scaled and reshaped?
+        '''    
 
         #print ('X_holdout (before rescale) values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))
         #self.X_holdout = self.X_holdout.astype('float32')
         #self.X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
         # does my holdout data look ok?
-        print ('X_holdout values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))    
+        print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))    
+        print ('y_holdout values look like {}'.format(y_holdout[:4]))
 
-        print ('shapes in evaluate_model X {} y {}'.format(self.X_holdout.shape, self.y_holdout.shape))    
+        print ('shapes in evaluate_model X {} y {}'.format(X_holdout.shape, y_holdout.shape))    
 
         # not actally necessary
         image_gen_holdout = preprocessing.image.ImageDataGenerator( )
 
-        self.holdout_datagen = image_gen_holdout.flow(self.X_holdout, 
-                                              self.y_holdout, 
-                                              #target_size=self.target_size,
-                                              shuffle=False
+        holdout_datagen = image_gen_holdout.flow(X_holdout, 
+                                              y_holdout, 
                                               )
 
-        metrics = model.evaluate(self.holdout_datagen,
-                                           steps=self.nHoldout/self.batch_size,  
-                                           #use_multiprocessing=True,
+        metrics = self.model.evaluate(holdout_datagen,
                                            verbose=1)
         print("holdout loss:")
         print(metrics[0])
