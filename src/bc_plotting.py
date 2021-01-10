@@ -19,7 +19,7 @@ def show_9grid_image(train_ds):
             plt.axis("off")
 
 
-def plot_training_results(history, epochs):
+def plot_training_results(history, epochs, filename):
     if history is None:
         return
     acc = history.history['accuracy']
@@ -47,7 +47,7 @@ def plot_training_results(history, epochs):
     ax2.set_title('Training and Validation Loss')
     plt.show()
     fig.tight_layout()
-    fig.savefig('../imgs/history.png', dpi = 200)
+    fig.savefig('../imgs/' + filename + '.png', dpi = 200)
 
 def my_roc_curve(probabilities, labels):
     '''

@@ -480,9 +480,9 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 	'''	
 
 	# Holdout scaled and reshaped?
-	print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
-	X_holdout = X_holdout.astype('float32')
-	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+	#print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
+	#X_holdout = X_holdout.astype('float32')
+	#X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 	# does my holdout data look ok?
 	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 
@@ -613,7 +613,7 @@ def run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_h
 
 
 	if (cnn.history is not None):
-		plot_training_results(history = cnn.model.history, epochs=nb_epoch)
+		plot_training_results(history = cnn.model.history, epochs=nb_epoch, filename='history_cnn')
 	else:
 		print ('finish without history')	
     		
@@ -646,7 +646,22 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 
 
 	# evaluate_model(transfer_model, X_holdout, y_holdout)
+	# Do rescale out here, once
+	X_holdout = X_holdout.astype('float32')
+	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+
+	# This one used data gen
 	transfer_model.evaluate_model(transfer_model.model, X_holdout, y_holdout)
+
+	# This evaluate is a little nicer maybe...
+	print (' ************* Nicer Evaluation (i think) *****************')
+	df_results = evaluate_model(transfer_model, X_holdout, y_holdout, df_hold)
+	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
+
+	if (transfer_model.history is not None):
+		plot_training_results(history = transfer_model, epochs=nb_epoch, filename='history_transfer_model')
+	else:
+		print ('finish without history')	
 
 	return transfer_model
 

@@ -52,6 +52,8 @@ class ClassificationNet(object):
         self.batch_size = batch_size
         self.preprocessing = preprocessing
         self.class_names =  None
+        self.history = None
+        self.model = None
 
         self.X_train = None
         self.y_train = None
@@ -196,28 +198,48 @@ class ClassificationNet(object):
             os.makedirs('models')
 
         # Initialize model checkpoint to save best model
-        savename = 'models/'+self.project_name+'.hdf5'
-        mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
-                                             verbose=0, save_best_only=True, 
-                                             save_weights_only=False, mode='auto',
-                                             save_freq = 'epoch')
-                                             # period=1) # deprecated
+        #savename = 'models/'+self.project_name+'.hdf5'
+        #mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
+        #                                     verbose=0, save_best_only=True, 
+        #                                     save_weights_only=False, mode='auto',
+        #                                     save_freq = 'epoch')
+        #                                     # period=1) # deprecated
 
-        history = model.fit(self.train_datagen,
+        self.history = model.fit(self.train_datagen,
                                       steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size ,
-                                      callbacks=[mc, tensorboard])
+                                      callbacks=[tensorboard])
 
+        # save just-fit model to compare
+        model.save('../models/saved_xfer_model.h5')
+
+        #best_model = load_model(savename)
+        #self.model = best_model
+        self.model = model
+
+
+        #print('evaluating transferred best model')
+        #accuracy = self.evaluate_model(best_model)
+        return '../models/saved_xfer_model.h5'
+
+        '''
         best_model = load_model(savename)
+
+        # hooollld on, verify best_model is working 
         self.model = best_model
-        print('evaluating simple model')
+        self.model = model  # ending model, might not be best (but could be)
+        print('evaluating best model')
         accuracy = self.evaluate_model(best_model)
+
+        print('evaluating just-built final model')
+        accuracy = self.evaluate_model(self.model)
 
         #todo: call history plot 
 
         return savename
+        '''
 
     def evaluate_model(self, model, X_holdout=None, y_holdout=None):
         """
@@ -231,7 +253,7 @@ class ClassificationNet(object):
 
         # assume model is set
         if self.model is None:
-            print ('failure: no model is set')
+            print ('weird: no model is set, ok will use the model you passed in')
 
         if X_holdout is not None:
             self.X_holdout = X_holdout    
@@ -240,14 +262,15 @@ class ClassificationNet(object):
             self.nHoldout = len(y_holdout)  
         	# Holdout scaled and reshaped?
 
-        print ('X_holdout (before rescale) values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))
-        self.X_holdout = self.X_holdout.astype('float32')
-        self.X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+        #print ('X_holdout (before rescale) values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))
+        #self.X_holdout = self.X_holdout.astype('float32')
+        #self.X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
         # does my holdout data look ok?
         print ('X_holdout values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))    
 
         print ('shapes in evaluate_model X {} y {}'.format(self.X_holdout.shape, self.y_holdout.shape))    
 
+        # not actally necessary
         image_gen_holdout = preprocessing.image.ImageDataGenerator( )
 
         self.holdout_datagen = image_gen_holdout.flow(self.X_holdout, 
@@ -372,34 +395,39 @@ class TransferClassificationNet(ClassificationNet):
             os.makedirs('models')
 
         # Initialize model checkpoint to save best model
-        savename = 'models/'+self.project_name+'.hdf5'
-        mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
-                                             verbose=0, save_best_only=True, 
-                                             save_weights_only=False, mode='auto',
-                                             save_freq = 'epoch')
-                                             #period=1)
+        #savename = 'models/'+self.project_name+'.hdf5'
+        #mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
+        #                                     verbose=0, save_best_only=True, 
+        #                                     save_weights_only=False, mode='auto',
+        #                                     save_freq = 'epoch')
+        #                                     #period=1)
 
-        history = model.fit(self.train_datagen,
+        self.history = model.fit(self.train_datagen,
                                       steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=warmup_epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size,
-                                      callbacks=[mc, tensorboard])
+                                      callbacks=[tensorboard])
 
         self.change_trainable_layers(model, freeze_indices[1])
         model.compile(optimizer=optimizers[1], loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
-        history = model.fit(self.train_datagen,
+        self.history = model.fit(self.train_datagen,
                                       steps_per_epoch=self.nTrain/self.batch_size * data_multiplier,
                                       epochs=epochs,
                                       validation_data=self.validation_datagen,
                                       validation_steps=self.nVal/self.batch_size,
-                                      callbacks=[mc, tensorboard])
-        best_model = load_model(savename)
-        self.model = best_model
-        print('evaluating transferred best model')
-        accuracy = self.evaluate_model(best_model)
-        return savename
+                                      callbacks=[tensorboard])
+        # save just-fit model to compare
+        model.save('../models/saved_xfer_model.h5')
+
+        #best_model = load_model(savename)
+        #self.model = best_model
+        self.model = model
+
+        #print('evaluating transferred best model')
+        #accuracy = self.evaluate_model(best_model)
+        return '../models/saved_xfer_model.h5'
 
     def change_trainable_layers(self, model, trainable_index):
         """
