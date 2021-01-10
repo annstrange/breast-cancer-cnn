@@ -42,6 +42,8 @@ def create_transfer_model(input_size, n_categories, weights = 'imagenet', model=
         """
     base_model = model(weights=weights,
                       include_top=False,
-                      input_shape=input_size)
+                      input_shape=input_size
+                      )
+    base_model.trainable=False                  
     model = add_model_head(base_model, n_categories)
     return model

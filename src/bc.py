@@ -648,14 +648,14 @@ def transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, ta
 	# evaluate_model(transfer_model, X_holdout, y_holdout)
 	# Do rescale out here, once
 	X_holdout = X_holdout.astype('float32')
-	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+	#X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 
-	# This one used data gen
-	transfer_model.evaluate_model(transfer_model.model, X_holdout, y_holdout)
+	# This one used data gen which also normalizes now (should do better)
+	transfer_model.evaluate_model(transfer_model.model, X_val, y_val)
 
 	# This evaluate is a little nicer maybe... but redundant with above (to delete)
 	print (' ************* Nicer Evaluation (i think) *****************')
-	df_results = evaluate_model(transfer_model, X_holdout, y_holdout, df_hold)
+	df_results = evaluate_model(transfer_model, X_val, y_val, df_hold)
 	print ('Holdout evaluation results {}'.format(df_results.iloc[0]))
 
 	try:
