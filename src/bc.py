@@ -481,8 +481,10 @@ def evaluate_model(modelx, X_holdout, y_holdout, df_hold):
 
 	# Holdout scaled and reshaped?
 	print ('X_holdout (before rescale) values look like {}'.format(X_holdout[:1,:1, :1, :5]))
-	X_holdout = X_holdout.astype('float32')
-	X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
+
+	if type(modelx) == CNN:
+		X_holdout = X_holdout.astype('float32')
+		X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
 	# does my holdout data look ok?
 	print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))
 
@@ -544,7 +546,7 @@ def image_train_val_hold_split(ip):
 	Do the image splits once, for all models to execute (not for Kfolds)
 	'''	
 	# To destry/ignore groups, override
-	#ip.group_list = np.arange(0, len(ip.group_list))
+	ip.group_list = np.arange(0, len(ip.group_list))
 
 	# shuffle! Keep filename and attributes lists in same order
 	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
@@ -773,7 +775,7 @@ if __name__ == '__main__':
 	df_val = get_dataframe(y_val, groups_val, filename_val, ip.images_attributes)
 
 	#################
-	run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
+	#run_alex_ish_net (X_train, X_val, X_holdout, y_train, y_val, y_holdout, df_hold, nb_epoch, data_multiplier)
 	
 
 	# New stuff -------------Transfer model
@@ -785,7 +787,7 @@ if __name__ == '__main__':
 	batch_size = 32
 
 	
-	#tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier, df_hold, df_val)
+	tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, nb_epoch, batch_size, data_multiplier, df_hold, df_val)
 
 	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
 
