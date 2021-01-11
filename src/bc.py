@@ -544,7 +544,7 @@ def image_train_val_hold_split(ip):
 	Do the image splits once, for all models to execute (not for Kfolds)
 	'''	
 	# To destry/ignore groups, override
-	ip.group_list = np.arange(0, len(ip.group_list))
+	#ip.group_list = np.arange(0, len(ip.group_list))
 
 	# shuffle! Keep filename and attributes lists in same order
 	X, y, groups, filename_list = shuffle_all(ip.features, ip.tumor_class_vector, ip.group_list, ip.images_filename_list)
@@ -561,7 +561,7 @@ def image_train_val_hold_split(ip):
 			groups=groups, filename_list=filename_list, holdout_pct=0.1)
 
 	# Since holdouts doesn't get attached to datagen, apply any preprocessing, rescale
-	X_holdout 
+	# but this is done in evaluate_model()
 
 	print ('after train_holdouts_split')
 
