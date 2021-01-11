@@ -173,9 +173,8 @@ def run_pipeline(brief_mode=False):
 
 def perform_image_transforms(ip):
 	'''
-	Todo: These need evaluation: which is better.
+	Todo: These need evaluation: which is better, do any help the model? (so far, no)
 	'''
-	pass
 	# 1. No transforms - full color
 
 	# 2. Grayscal denoise chambolle - these reduce the dimensions which the model needs to handle. 
@@ -410,13 +409,13 @@ def load_data_pipeline(brief_mode=False):
 	'''	
 	# sets ip images_filename_list, and images_list
 	ip = run_pipeline(brief_mode=brief_mode) 
-	perform_image_transforms(ip)
+	#perform_image_transforms(ip)
 
 	# Turns data into arrays
 	ip.vectorize() # sets ip features and tumor_class_vector
 	test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
 
-	ip.double_the_benigns()  # Evens out the classes, a form of oversampling
+	#ip.double_the_benigns()  # Evens out the classes, a form of oversampling
 	num_diffs = test_integrities(ip.tumor_class_vector, ip.group_list, ip.images_filename_list, ip.images_attributes)
 
 	return ip
@@ -440,9 +439,6 @@ def image_train_val_hold_split(ip):
 	X_train, X_holdout, y_train, y_holdout, groups_tr, groups_hold, filename_tr, filename_hold  = \
 			train_holdouts_split_by_group(X, y, \
 			groups=groups, filename_list=filename_list, holdout_pct=0.1)
-
-	# Since holdouts doesn't get attached to datagen, apply any preprocessing, rescale
-	# but this is done in evaluate_model()
 
 	print ('after train_holdouts_split')
 
@@ -619,10 +615,3 @@ if __name__ == '__main__':
 	#tf_model = transfer_model_main(X_train, X_val, X_holdout, y_train, y_val, y_holdout, target_size, \
 	#                               nb_epoch, batch_size, data_multiplier, df_hold, df_val)
 	# df_prob = evaluate_model(tf_model, X_holdout, y_holdout, df_hold)
-
-	# For fun, later
-	# Boto S3 connection test want annstrange-cnn-boto3 
-	# todo add try catch, but this totally works if env vars passed to docker run cmd. 
-	#boto3_connection = get_s3('us-west-2')
-	#if boto3_connection:
-	#	print_s3_buckets_boto3(boto3_connection)

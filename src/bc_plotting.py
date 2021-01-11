@@ -35,7 +35,6 @@ def plot_training_results(history, epochs, filename):
 
     fig = plt.figure(figsize=(12, 8))
 
-    #fig, axs = plt.subplots(1, 2, figsize=(12,8))
     ax1 = fig.add_subplot(1, 2, 1)
 
     ax1.plot(epochs_range, acc, label='Training Accuracy')
@@ -147,12 +146,6 @@ def plot_roc(X_test, y_test, model, plot_name):
     plt.savefig(savefile, dpi=200)
     plt.show()
 
-
-def roc_plot(ax, title, saveas):
-    '''
-    Generates ROC plot
-    '''
-    pass    
 
 def plot_predictions(x, y, y_hat, title):
 

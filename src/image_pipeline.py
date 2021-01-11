@@ -10,7 +10,6 @@ from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
 from skimage import color, transform, restoration, io, feature, util
 from itertools import compress
-# flake8: noqa
 
 verbose = False
 
@@ -40,8 +39,7 @@ class ImagePipeline(object):
         self.images_attributes = {}  # dictionary with known attributes by filename
         self.group_list = []
 
-        #dataset specifics
-        #root_dir = '../BreaKHis_v1/histology_slides/breast'
+
         srcfiles = {'DC': '%s/malignant/SOB/ductal_carcinoma/%s/%sX/%s',
                 'LC': '%s/malignant/SOB/lobular_carcinoma/%s/%sX/%s',
                 'MC': '%s/malignant/SOB/mucinous_carcinoma/%s/%sX/%s',
@@ -54,13 +52,6 @@ class ImagePipeline(object):
         self.malig_tumor_types = {'DC', 'MC', 'PC', 'LC'}
         self.benign_tumor_types = {'A', 'TA', 'F', 'PT'}
 
-    #def _make_label_map(self):
-        """
-        Get the sub directory names and map them to numeric values (labels)
-
-        :return: A dictionary of dir names to numeric values
-        """
-        #return {label: i for i, label in enumerate(self.raw_sub_dir_names)}
 
     def _path_relative_to_parent(self, some_dir):
         """
@@ -91,7 +82,6 @@ class ImagePipeline(object):
         """
         self.images_list = []
         self.images_filename_list = []
-        # self.labels = None
         self.images_attributes = {}
         self.features = None
         self.tumor_class_vector = None
@@ -203,7 +193,6 @@ class ImagePipeline(object):
 
             # Test last folder for 40X, 100X, 200X, 400X
             fldr = root.split("/")[-1:]
-            #print("fldr {}".format(fldr))
 
             if self._accepted_subdir(fldr[0]):
                 if verbose: print ('valid subdir {}'.format(fldr[0])) 
@@ -221,14 +210,12 @@ class ImagePipeline(object):
                 self.images_list.append(img_lst)
 
         # images_list is a list of lists...
-        #print('images_list should have list of {} patients, 1st has {} images, filenames of shape {}'.format(len(self.images_list), len(self.images_list[0]), (self.images_list[0][0].shape)))
         for i in np.arange(0, len(self.images_list)):
             for j in np.arange(0, len(self.images_list[i])):
                 if (i == 0 and j == 0 ):
                     print ('first image shape {}'.format(self.images_list[i][j].shape))
 
         # images_filename_list is also list of lists...
-        #print('images_filename_list should have list of {} patients, 1st has {} entries'.format(len(self.images_filename_list), len(self.images_filename_list[0])))
         for i in np.arange(0, len(self.images_filename_list)):
             for j in np.arange(0, len(self.images_filename_list[i])):
                 if (i == 0 and j == 0 ):
@@ -252,41 +239,6 @@ class ImagePipeline(object):
 
         self._parse_attributes()
 
-    '''
-    def save(self, keyword):
-        """
-        Save the current images into new sub directories
-
-        :param keyword: The string to append to the end of the original names for the
-                        new sub directories that we are saving to
-        """
-        # Use the keyword to make the new names of the sub dirs
-        new_sub_dirs = ['%s.%s' % (sub_dir, keyword) for sub_dir in self.sub_dirs]
-
-        # Loop through the sub dirs and loop through images to save images to the respective subdir
-        for new_sub_dir, img_names, img_lst in zip(new_sub_dirs, self.images_filename_list, self.images_list):
-            new_sub_dir_path = self._path_relative_to_parent(new_sub_dir)
-            self._make_new_dir(new_sub_dir_path)
-
-            for fname, img_arr in zip(img_names, img_lst):
-                io.imsave(os.path.join(new_sub_dir_path, fname), img_arr)
-
-        self.sub_dirs = new_sub_dirs
-
-    def show(self, sub_dir, img_ind):
-        """
-        View the nth image in the nth class
-
-        :param sub_dir: The name of the category
-        :param img_ind: The index of the category of images
-        """
-        sub_dir_ind = self.label_map[sub_dir]
-        # prolly dont' want this
-        print('in ip.show, sub_dir = {} and sub_dir_ind = {} and map {}'.format(sub_dir, sub_dir_ind, self.label_map))
-
-        io.imshow(self.images_list[0][img_ind])  # prolly change sub_dir to sub_dir_ind (0-81)
-        plt.show()
-    '''
     def collapse_outer_list(self, nested_list):
         '''
         Input: list of a list of whatever
@@ -420,10 +372,6 @@ class ImagePipeline(object):
             save: Boolean to save the images in new directories or not
         """
         self.transform(transform.resize, dict(output_shape=shape, preserve_range=True, anti_aliasing=True))
-        
-        #if save:
-        #    shape_str = '_'.join(map(str, shape))
-        #    self.save(shape_str)
     
     def apply_square_crop(self, img_ind=None):
         """
@@ -443,16 +391,6 @@ class ImagePipeline(object):
         #print('shape of np array converted images_list going in {}'.format(to_array.shape))
 
         self.features = to_array
-
-    '''
-    def _vectorize_labels(self):
-        """
-        Convert file names to a list of y labels (in the example it would be either cat or dog, 1 or 0)
-        """
-        # Get the labels with the dimensions of the number of image files
-        self.labels = np.concatenate([np.repeat(i, len(img_names))
-                                     for i, img_names in enumerate(self.images_filename_list)])
-    '''
 
     @staticmethod
     def _parse_filename(filename):
@@ -563,12 +501,10 @@ class ImagePipeline(object):
         '''
         d1 = {}
         for i in np.arange(0, len(self.images_filename_list)):
-            #print ('image name to parse {}'.format(self.images_filename_list[i][j]))
             filename = self.images_filename_list[i]
             d_one = self._parse_filename(filename)
             d1[filename] = d_one[filename]
                 
-        # add image sizes
         # only do this the first time
         for i in np.arange(0, len(self.images_list)):
             fn = self.images_filename_list[i]
@@ -577,7 +513,6 @@ class ImagePipeline(object):
                 print (d1[fn])
 
         self.images_attributes = d1                
-        #print (self.images_attributes)
 
 
     def vectorize(self):
@@ -607,8 +542,6 @@ class ImagePipeline(object):
         self.tumor_class_vector = np.concatenate((self.tumor_class_vector, y_to_append), axis = 0)
         self.features = np.vstack((self.features, X_to_append))
         print ('post append shapes {} {} {}'.format(self.tumor_class_vector.shape, benign_filter_arr.shape, self.features.shape))
-
-        # also fix self.group_list and self.filenames
 
         fn_to_append = compress(self.images_filename_list, benign_filter_arr) 
         self.images_filename_list.extend(fn_to_append)
@@ -662,8 +595,6 @@ class ImagePipeline(object):
 
             img8_lst.append(img)
             img_dict[fn] = img
-
-        #print('returning {} sample images in list shape {}'.format(len(img8_lst), img8_lst[0].shape))
    
         return img_dict
 

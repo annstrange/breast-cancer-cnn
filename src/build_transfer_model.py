@@ -19,14 +19,7 @@ def add_model_head(base_model, n_categories):
     x = Dropout(0.2)(x)
     predictions = Dense(n_categories, activation='softmax')(x)
 
-    # how to add Dropouts here?
-    # predictions.add(Dropout(0.2))  'Tensor' object has no attribute 'add'
-
-
     model = Model(inputs=base_model.input, outputs=predictions)
-
-    #print ('model \n {}'.format(model.summary() ))  
-    # this says we have 20 million trainable layers
 
     return model
 

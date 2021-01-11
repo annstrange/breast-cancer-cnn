@@ -22,9 +22,6 @@ from simple_cnn import create_model
 
 np.random.seed(40)  # for reproducibility
 seed = 40
-# important inputs to the model: 
-#batch_size = 32  # number of training samples used at a time to update the weights, was 5000
-#nb_classes = 2  # 10    # number of output possibilities: [0 - 9] KEEP
 
 
 class ClassificationNet(object):
@@ -76,11 +73,13 @@ class ClassificationNet(object):
         self.y_train = y_train
         self.y_test = y_test
         self.y_holdout = y_holdout
-        print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'. format(X_train.shape, X_test.shape, y_train.shape, y_test.shape))
-        print ('How many train ben/malig {} out of total {}'.format(self.y_train.sum(axis=0), len(self.y_train)) )
-        print ('How many test ben/malig {} out of total {}'.format(self.y_test.sum(axis=0), len(self.y_test)))
+        print ('What do X_train, X_test, y_train, y_test look like {} {} {} {}'.format( \
+               X_train.shape, X_test.shape, y_train.shape, y_test.shape))
+        print ('How many train ben/malig {} out of total {}'.format( \
+               self.y_train.sum(axis=0), len(self.y_train)) )
+        print ('How many test ben/malig {} out of total {}'.format( \
+               self.y_test.sum(axis=0), len(self.y_test)))
 
-        # fix these
         self.nTrain = len(self.y_train) #: number of training samples
         self.nVal = len(self.y_test)  #: number of validation samples
         self.nHoldout = len(self.y_holdout) #: number of holdout samples
@@ -97,11 +96,9 @@ class ClassificationNet(object):
         # convert and normalization
         self.X_train = self.X_train.astype('float32')  # data was uint8 [0-255]
         self.X_test = self.X_test.astype('float32')    # data was uint8 [0-255]
-        #self.X_holdout = self.X_holdout.astype('float32')
-        # traded for normalizing in data gen
+        # traded for normalizing in data gen, but left here in case 
         #self.X_train /= 255.0  # normalizing (scaling from 0 to 1)
         #self.X_test /= 255.0   # normalizing (scaling from 0 to 1)
-        #self.X_holdout /= 255 
 
         print('X_train shape:', self.X_train.shape)
         print(self.X_train.shape[0], 'train samples')
@@ -123,7 +120,6 @@ class ClassificationNet(object):
 
         self.train_datagen = image_gen_train.flow(self.X_train, 
                                                   self.y_train, 
-                                                  #target_size=self.target_size,
                                                   shuffle=True,
                                                   )
 
@@ -131,61 +127,8 @@ class ClassificationNet(object):
 
         self.validation_datagen = image_gen_val.flow(self.X_test, 
                                               self.y_test, 
-                                              #target_size=self.target_size,
                                               shuffle=False,
                                               )
-
-        """
-        Create generators to read images from directory
-        """
-
-        '''
-        From original code:
-
-        # Set parameters for processing and augmenting images
-        self.train_datagen = ImageDataGenerator(
-            preprocessing_function=self.preprocessing,
-            rotation_range=15*self.augmentation_strength,
-            width_shift_range=self.augmentation_strength,
-            height_shift_range=self.augmentation_strength,
-            shear_range=self.augmentation_strength,
-            zoom_range=self.augmentation_strength
-        )
-        # no need for augmentation on validation images
-        self.validation_datagen = ImageDataGenerator(
-            preprocessing_function=self.preprocessing
-        )
-
-        self.train_generator = self.train_datagen.flow_from_directory(
-            self.train_folder,
-            target_size=self.target_size,
-            batch_size=self.batch_size,
-            class_mode='categorical',
-            shuffle=True)
-
-        self.validation_generator = self.validation_datagen.flow_from_directory(
-            self.validation_folder,
-            target_size=self.target_size,
-            batch_size=self.batch_size,
-            class_mode='categorical',
-            shuffle=False)
-        '''
-
-    def fit(self, X_train, X_test, X_holdout, y_train, y_test, y_holdout, model_fxn, optimizer, epochs, data_multiplier=1):
-        """
-        Fits the CNN to the data, then saves and predicts on best model
-
-        Args:
-            train_folder(str): folder containing train data
-            validation_folder(str): folder containing validation data
-            holdout_folder(str): folder containing holdout data
-            model_fxn(function): function that returns keras Sequential classifier
-            optimizer(keras optimizer): optimizer for training
-            epochs(int): number of times to pass over data
-
-        Returns:
-            str: file path for best model
-            """
 
         self._init_data(X_train, X_test, X_holdout, y_train, y_test, y_holdout)
         print(self.class_names)
@@ -195,16 +138,13 @@ class ClassificationNet(object):
         model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
         # Initialize tensorboard for monitoring
-        #tensorboard = keras.callbacks.TensorBoard(
-        #    log_dir=self.project_name, histogram_freq=0, batch_size=self.batch_size, write_graph=True, embeddings_freq=0)
-
         tbCallBack = TensorBoard(log_dir='../logs', histogram_freq=0, write_graph=True, write_images=True, \
                                  update_freq='epoch')    
 
         if not os.path.exists('models'):
             os.makedirs('models')
 
-        # Initialize model checkpoint to save best model
+        # Initialize model checkpoint to save best model. Broken
         #savename = 'models/'+self.project_name+'.hdf5'
         #mc = keras.callbacks.ModelCheckpoint(savename, monitor='val_loss', 
         #                                     verbose=0, save_best_only=True, 
@@ -228,27 +168,7 @@ class ClassificationNet(object):
         #self.model = best_model
         self.model = model
 
-
-        #print('evaluating transferred best model')
-        #accuracy = self.evaluate_model(best_model)
         return '../models/saved_xfer_model.h5'
-
-        '''
-        best_model = load_model(savename)
-
-        # hooollld on, verify best_model is working 
-        self.model = best_model
-        self.model = model  # ending model, might not be best (but could be)
-        print('evaluating best model')
-        accuracy = self.evaluate_model(best_model)
-
-        print('evaluating just-built final model')
-        accuracy = self.evaluate_model(self.model)
-
-        #todo: call history plot 
-
-        return savename
-        '''
 
     def evaluate_model(self, X_holdout=None, y_holdout=None):
         """
@@ -264,25 +184,13 @@ class ClassificationNet(object):
         if self.model is None:
             print ('weird: no model is set, ')
 
-        '''
-        if X_holdout is not None:
-            self.X_holdout = X_holdout    
-        if y_holdout is not None:
-            self.y_holdout = y_holdout  
-            self.nHoldout = len(y_holdout)  
-        	# Holdout scaled and reshaped?
-        '''    
-
-        #print ('X_holdout (before rescale) values look like {}'.format(self.X_holdout[:1,:1, :1, :5]))
         #self.X_holdout = self.X_holdout.astype('float32')
         #self.X_holdout /= 255.0   # normalizing (scaling from 0 to 1)
-        # does my holdout data look ok?
         print ('X_holdout values look like {}'.format(X_holdout[:1,:1, :1, :5]))    
         print ('y_holdout values look like {}'.format(y_holdout[:4]))
 
         print ('shapes in evaluate_model X {} y {}'.format(X_holdout.shape, y_holdout.shape))    
 
-        # not actally necessary
         image_gen_holdout = preprocessing.image.ImageDataGenerator(samplewise_std_normalization=True )
 
         holdout_datagen = image_gen_holdout.flow(X_holdout, 
@@ -310,47 +218,6 @@ class ClassificationNet(object):
 
         for i, layer in enumerate(model.layers[indices:]):
             print("Layer {} | Name: {} | Trainable: {}".format(i+indices, layer.name, layer.trainable))
-
-    '''
-    # todo: needs some repair to work
-    def process_img(self,img_path):
-        """
-        Loads image from filename, preprocesses it and expands the dimensions because the model predict function expects a batch of images, not one image
-        Args:
-            img_path (str): file to load
-        Returns:
-            np.array: preprocessed image
-        """
-        original = load_img(filename, target_size = self.target_size)
-        numpy_image = self.preprocessing( img_to_array(original))
-        image_batch = np.expand_dims(numpy_image, axis =0)
-        return image_batch
-    '''
-    '''
-    def model_predict(self, img_path,model):
-        """
-        Uses an image and a model to return the names and the predictions of the top 3 classes
-
-        Args:
-            img_path (str): file to load
-            model (keras classifier model): model to use for prediction
-
-        Returns:
-            str: top 3 predictions
-            """
-        im =  process_img(img_path)
-        preds =  model.predict(im)
-
-        # For when we have multiple classifications
-        if (n_categories >= 3):
-            top_3 = preds.argsort()[0][::-1][:3] # sort in reverse order and return top 3 indices
-            top_3_names = class_names[top_3]
-            top_3_percent = preds[0][[top_3]]*100
-            top_3_text = '\n'.join([str(name) + str(percent) + '%' for name, percent in zip(top_3_names,top_3_percent)])
-            return top_3_text
-        else: 
-            return preds
-    '''
 
     def set_class_names(self):
         """
@@ -440,8 +307,6 @@ class TransferClassificationNet(ClassificationNet):
         #self.model = best_model
         self.model = model
 
-        #print('evaluating transferred best model')
-        #accuracy = self.evaluate_model(best_model)
         return '../models/saved_xfer_model.h5'
 
     def change_trainable_layers(self, model, trainable_index):
@@ -454,7 +319,7 @@ class TransferClassificationNet(ClassificationNet):
 
         Returns:
             None
-            """
+        """
 
         for layer in model.layers[:trainable_index]:
             layer.trainable = False
@@ -463,38 +328,5 @@ class TransferClassificationNet(ClassificationNet):
 
 
 def main():
-    #train_folder = 'data/train_small'
-    #validation_folder = 'data/validation_small'
-    #holdout_folder = 'data/holdout_small'
-
     print ('data setup is needed => call from bc.py')
-'''
-    target_size = (100, 100)  # 299,299 is suggested for xception but is quite taxing on cpu
-    epochs = 5
-    batch_size = 32
-
-    model_fxn = create_model
-    opt = RMSprop(lr=0.001)
-
-    simple_cnn = ClassificationNet('simple_class_test', target_size, 
-                                   preprocessing=preprocess_input, batch_size=batch_size)
-    simple_cnn.fit(train_folder, validation_folder, holdout_folder, model_fxn, opt, epochs)
-
-    model_fxn = create_transfer_model
-    freeze_indices = [132, 126] # first unfreezing only head, then conv block 14
-    optimizers = [RMSprop(lr=0.0006), RMSprop(lr=0.0001)] # keep learning rates low to keep from wrecking weights
-
-    warmup_epochs = 5
-    epochs = epochs - warmup_epochs
-    transfer_model = TransferClassificationNet('transfer_test', target_size, 
-                                                augmentation_strength=0.2, 
-                                                preprocessing=preprocess_input, 
-                                                batch_size=batch_size)
-    transfer_model.fit(train_folder, validation_folder, holdout_folder, model_fxn,
-                       optimizers, epochs, freeze_indices, warmup_epochs=warmup_epochs)
-
-
-if __name__ == '__main__':
-    main()
-
-'''
+ 
