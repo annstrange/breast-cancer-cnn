@@ -51,7 +51,9 @@ In the case of supervised learning, we do not need to provide these features exp
 
 Data Augmentation (slight rotation, flip, zoom to produce new samples) Helps Solve:
 - Need for more data to train
-- Re-balance Benign and Malignant training samples (close to 50/50)
+- Re-balance Benign and Malignant training samples (close to 50/50) initially but removed as this was the source of a data leak and really wasn't necessary as this data is not dramatically imbalanced to have a true minority class. 
+
+The model was trained on a P3 AWS EC2 server with a GPU which brought training time down from about 30 hours to 2 hours. A Docker container was used for Tensorflow, Tensorboard, Scikit-Learn and Scikit-Image locally, but to gain GPU support on EC2, ulimately is was easiest to enable the Deep Learning AMI on the EC2 for the latest tensorflow version. 
 
 
 # Model Selection
@@ -59,7 +61,8 @@ Data Augmentation (slight rotation, flip, zoom to produce new samples) Helps Sol
 ### Choice of Hyperparameters
 * Loss function - Sparse_categorical_crossentropy. 
 * Optimizer - Adadelta did better at showing a steady decrease in loss rate than Adam or SGD
-* Metrics - Accuracy, then F-1 
+* Metrics - Recall (also made sure Accuracy, then F-1 aren't terrible)
+* Data Augmentation - produced 10 augmented images for each one
 * Learning Rate / Epochs - slow
 
 ![model](imgs/CNN-model.jpg)
@@ -69,7 +72,7 @@ Credit Dabeer et al.
 **Table 1. Parameters of the Convolutional Layer Parameters**
 | Layer         | L1   | L2   | L3   | L4   | L5   | 
 | ------------- |:----:|:----:|:----:|:----:|:----:|
-| Type	        | conv | conv | pool | conv | pool |
+| Type	       | conv | conv | pool | conv | pool |
 | Channel	    | 32   | 64	  |  -   | 128	|  –   |
 | Filter Size	| 5 × 5| 5 × 5|	–	 |5 × 5	| –    |
 | Conv. stride	| 1 × 1| 1 × 1|	–	 |1 × 1	| –    |
@@ -84,37 +87,45 @@ Credit Dabeer et al.
 | Layer Attribute | FC-1   | FC-2   | FC-3   | 
 | --------------- |:------:|:------:|:------:|
 | No of nodes     |	64	   | 64     |	2   |
-| Activation used | Sigmoid | Sigmoid |	Softmax |
+| Activation used | Relu   | Relu   |	Softmax |
 
 
+**Measure**
+I choose Recall as a primary measure (although accuracy matters as well) because its a measure of the model's ability to find all the relevant cases within the dataset, or the fraction of the actually malignant that are predicted malignant.
 
+The model favors reducing False Negatives.  There are a higher number of False Positives however which do not come free either; there is a tradeoff.  Adenomas (benign tumors) are more common in women in their 30's and 40's and while they mimmic malignant tumors in many ways, often do no become aggressive and matastestize.  Since the treatment for cancer actually can be harmful, involving procedures, surgeries, and even chemo/radiation, there is some push by health experts to permorm mammograms later. 
 
+** cite source
 
 
 
 Cost Measures:
 
-Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples. 
+            precision    recall  f1-score   support
 
-              precision    recall  f1-score   support
+           0       0.94      0.68      0.79       134
+           1       0.74      0.95      0.84       130
 
-           0       0.49      1.00      0.66       259
-           1       0.00      0.00      0.00       269
+    accuracy                           0.81       264
+   macro avg       0.84      0.82      0.81       264
+weighted avg       0.84      0.81      0.81       264
 
-    accuracy                           0.49       528
-   macro avg       0.25      0.50      0.33       528
-weighted avg       0.24      0.49      0.32       528
-
-Test scores: [0.705602582656976, 0.4905303]
-Test accuracy: 0.4905303
+Results
+![Results](imgs/results_bar.png)
 
 
 # Conclusions:
-The model is not training properly, indicating insufficient training data, underfit and/or incomplete tuning.
-- Increase Network size, adding more layers and epochs, leveraging additional computing power on AWS
-- Tuning
-- Overfit, then add regularization 
 
+The model is learning and does okay relative to the AlexNet model that gained a lot of interest in 
+
+Potential Improvements
+* More data sources
+* Color adjustment for common lab variation
+* Transfer Learning with ResNet or Xception
+* Deconvolution Net*
+
+To run:
+$ python breastcancer_cnn.py -n_epochs 40 -data_multiplier 10
 
 ### Cited
 
