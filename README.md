@@ -70,16 +70,16 @@ Credit Dabeer et al.
 
 
 **Table 1. Parameters of the Convolutional Layer Parameters**
-| Layer         | L1   | L2   | L3   | L4   | L5   | 
-| ------------- |:----:|:----:|:----:|:----:|:----:|
-| Type	       | conv | conv | pool | conv | pool |
-| Channel	    | 32   | 64	  |  -   | 128	|  –   |
-| Filter Size	| 5 × 5| 5 × 5|	–	 |5 × 5	| –    |
-| Conv. stride	| 1 × 1| 1 × 1|	–	 |1 × 1	| –    |
-| Pooling size	|   -  |  -   | 3 × 3|	–	| 3 × 3|
-| Pooling stride|	–  | -    | 1 × 1|	–	| 1 × 1|	
-| Padding size  | same |	  |valid |  –	|valid |		
-| Activation    | ReLu | ReLu | –	| ReLu | –     |
+| Layer         | L1   | L2   | L3   | L4   | L5   | L6  |
+| ------------- |:----:|:----:|:----:|:----:|:----:|:----:|
+| Type	       | conv | pool | conv | pool | conv | pool |
+| Channel	    | 32   |  -   | 64   |  -   | 128	|  –   |
+| Filter Size	| 5 × 5|  –	 | 5 × 5|	–	 |5 × 5	| –    |
+| Conv. stride	| 1 × 1|  –	 | 1 × 1|	–	 |1 × 1	| –    |
+| Pooling size	|   -  |3 × 3| -   | 3 × 3|	–	| 3 × 3|
+| Pooling stride|	–  | 1 × 1| -    | 1 × 1|	–	| 1 × 1|	
+| Padding size  | same | -	  |valid |  –	|valid |	–     |	
+| Activation    | ReLu | –	  |  ReLu | –	| ReLu | –     |
 
 
 
@@ -93,10 +93,7 @@ Credit Dabeer et al.
 **Measure**
 I choose Recall as a primary measure (although accuracy matters as well) because its a measure of the model's ability to find all the relevant cases within the dataset, or the fraction of the actually malignant that are predicted malignant.
 
-The model favors reducing False Negatives.  There are a higher number of False Positives however which do not come free either; there is a tradeoff.  Adenomas (benign tumors) are more common in women in their 30's and 40's and while they mimmic malignant tumors in many ways, often do no become aggressive and matastestize.  Since the treatment for cancer actually can be harmful, involving procedures, surgeries, and even chemo/radiation, there is some push by health experts to permorm mammograms later. 
-
-** cite source
-
+The model favors reducing False Negatives.  There are a higher number of False Positives however which do not come free either; there is a tradeoff.  Adenomas (benign tumors) are more common in women in their 30's and 40's and while they mimmic malignant tumors in many ways, often do no become aggressive and matastestize.  Since the treatment for cancer actually can be harmful, involving procedures, surgeries, and even chemo/radiation, there is some push by health experts to perform mammograms later. 
 
 
 Cost Measures:
@@ -122,7 +119,7 @@ Potential Improvements
 * More data sources
 * Color adjustment for common lab variation
 * Transfer Learning with ResNet or Xception
-* Deconvolution Net*
+* Deconvolutional Net to visualize patterns being matched
 
 To run:
 $ python breastcancer_cnn.py -n_epochs 40 -data_multiplier 10
